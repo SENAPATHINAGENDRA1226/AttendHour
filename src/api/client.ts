@@ -1,8 +1,13 @@
 import axios from "axios";
 
+const defaultBaseUrl = import.meta.env.DEV
+  ? "/api"
+  : "https://hourlogix-backend.onrender.com";
+
 export const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || defaultBaseUrl,
 });
+
 
 api.interceptors.request.use((config) => {
   const raw = localStorage.getItem("attendance_auth");
