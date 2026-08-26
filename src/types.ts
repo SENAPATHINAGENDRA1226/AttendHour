@@ -23,6 +23,7 @@ export interface Section {
   name: string;
   display_name: string;
   academic_year: string;
+  student_count?: number;
 }
 
 export interface Subject {
