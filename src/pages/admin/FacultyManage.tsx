@@ -12,6 +12,7 @@ export default function FacultyManage() {
   const editUsernameInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({ username: "", full_name: "", email: "", password: "" });
+  const [showAddForm, setShowAddForm] = useState(false);
   const [formError, setFormError] = useState("");
   const [formBusy, setFormBusy] = useState(false);
 
@@ -191,55 +192,67 @@ export default function FacultyManage() {
       )}
 
       <div className="card">
-        <h3>Add Faculty Account</h3>
-        {formError && <ErrorBanner message={formError} onDismiss={() => setFormError("")} />}
-        <form onSubmit={createFaculty}>
-          <div className="form-grid">
-            <div>
-              <label htmlFor="create-fac-username">Username</label>
-              <input
-                id="create-fac-username"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                required
-                disabled={formBusy}
-              />
-            </div>
-            <div>
-              <label htmlFor="create-fac-fullname">Full Name</label>
-              <input
-                id="create-fac-fullname"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                required
-                disabled={formBusy}
-              />
-            </div>
-            <div>
-              <label htmlFor="create-fac-email">Email (optional)</label>
-              <input
-                id="create-fac-email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                disabled={formBusy}
-              />
-            </div>
-            <div>
-              <label htmlFor="create-fac-password">Temporary Password</label>
-              <input
-                id="create-fac-password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                disabled={formBusy}
-              />
-            </div>
-          </div>
-          <button className="btn" type="submit" disabled={formBusy} aria-label="Create faculty account">
-            {formBusy ? <Spinner inline label="Creating…" /> : "Create Faculty Account"}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showAddForm ? 14 : 0 }}>
+          <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>Add Faculty Account</h3>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => setShowAddForm(!showAddForm)}
+            style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showAddForm ? "▲ Hide Form" : "👤 Add New Faculty ▾"}
           </button>
-        </form>
+        </div>
+        {formError && <ErrorBanner message={formError} onDismiss={() => setFormError("")} />}
+        {showAddForm && (
+          <form onSubmit={createFaculty}>
+            <div className="form-grid">
+              <div>
+                <label htmlFor="create-fac-username">Username</label>
+                <input
+                  id="create-fac-username"
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  required
+                  disabled={formBusy}
+                />
+              </div>
+              <div>
+                <label htmlFor="create-fac-fullname">Full Name</label>
+                <input
+                  id="create-fac-fullname"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  required
+                  disabled={formBusy}
+                />
+              </div>
+              <div>
+                <label htmlFor="create-fac-email">Email (optional)</label>
+                <input
+                  id="create-fac-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  disabled={formBusy}
+                />
+              </div>
+              <div>
+                <label htmlFor="create-fac-password">Temporary Password</label>
+                <input
+                  id="create-fac-password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  disabled={formBusy}
+                />
+              </div>
+            </div>
+            <button className="btn" type="submit" disabled={formBusy} aria-label="Create faculty account" style={{ marginTop: 16 }}>
+              {formBusy ? <Spinner inline label="Creating…" /> : "Create Faculty Account"}
+            </button>
+          </form>
+        )}
       </div>
 
       <div className="card">

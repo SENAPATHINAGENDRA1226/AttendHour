@@ -19,6 +19,7 @@ export default function StudentUpload() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const [result, setResult] = useState<{ inserted: number; updated: number; errors: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -232,78 +233,106 @@ export default function StudentUpload() {
         </div>
       </div>
 
-      {/* Upload CSV Roster Form */}
+      {/* Collapsible Upload CSV Roster Card */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>
-            Upload / Bulk Update Roster ({activeSectionObj?.display_name || "Select Section"})
-          </h3>
-          <button className="btn secondary" type="button" onClick={downloadRosterTemplate}>
-            Download CSV template
-          </button>
-        </div>
-        <p className="hint-text" style={{ marginBottom: 14 }}>
-          CSV or XLSX with columns <code>roll_no</code>, <code>name</code>, and optional <code>order_no</code> (1–70). Re-uploading updates existing roll numbers and adds new ones.
-        </p>
-
-        {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
-
-        <form onSubmit={handleUpload} className="form-grid">
-          <div>
-            <label>Target Section</label>
-            <select
-              value={sectionId}
-              onChange={(e) => handleSelectSection(e.target.value)}
-              required
-              disabled={busy}
+        <div
+          onClick={() => setShowUploadForm(!showUploadForm)}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>
+              📤 Upload / Bulk Update Roster ({activeSectionObj?.display_name || "Select Section"})
+            </h3>
+            <span style={{ fontSize: "0.85rem", color: "var(--primary)", fontWeight: 600 }}>
+              {showUploadForm ? "▲ Hide Form" : "▼ Click to Upload"}
+            </span>
+          </div>
+          {showUploadForm && (
+            <button
+              className="btn secondary"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadRosterTemplate();
+              }}
             >
-              <option value="">Select Section…</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.display_name} ({s.student_count ?? 0} students)
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label>File (.csv or .xlsx)</label>
-            <input
-              type="file"
-              accept=".csv,.xlsx"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              required
-              disabled={busy}
-            />
-          </div>
-          <div style={{ alignSelf: "end" }}>
-            <button className="btn" disabled={busy || !file || !sectionId} type="submit">
-              {busy ? <Spinner inline label="Uploading…" /> : "Upload Roster"}
+              Download CSV template
             </button>
-          </div>
-        </form>
+          )}
+        </div>
 
-        {result && (
-          <div
-            className="status-badge posted"
-            style={{
-              marginTop: 16,
-              padding: "12px 16px",
-              borderRadius: "8px",
-              fontSize: "0.95rem",
-              display: "block",
-              lineHeight: "1.5",
-            }}
-          >
-            <strong>✓ Student roster inserted successfully!</strong>
-            <div style={{ marginTop: 4 }}>
-              {result.inserted} student{result.inserted === 1 ? "" : "s"} inserted, {result.updated} updated.
-            </div>
-            {result.errors.length > 0 && (
-              <div style={{ marginTop: 8, color: "var(--absent)" }}>
-                <strong>Errors encountered:</strong>
-                <ul style={{ margin: "4px 0 0 18px", padding: 0 }}>
-                  {result.errors.map((e, i) => <li key={i}>{e}</li>)}
-                </ul>
+        {showUploadForm && (
+          <div style={{ marginTop: 16 }}>
+            <p className="hint-text" style={{ marginBottom: 14 }}>
+              CSV or XLSX with columns <code>roll_no</code>, <code>name</code>, and optional <code>order_no</code> (1–70). Re-uploading updates existing roll numbers and adds new ones.
+            </p>
+
+            {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
+
+            <form onSubmit={handleUpload} className="form-grid">
+              <div>
+                <label>Target Section</label>
+                <select
+                  value={sectionId}
+                  onChange={(e) => handleSelectSection(e.target.value)}
+                  required
+                  disabled={busy}
+                >
+                  <option value="">Select Section…</option>
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.display_name} ({s.student_count ?? 0} students)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>File (.csv or .xlsx)</label>
+                <input
+                  type="file"
+                  accept=".csv,.xlsx"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  required
+                  disabled={busy}
+                />
+              </div>
+              <div style={{ alignSelf: "end" }}>
+                <button className="btn" disabled={busy || !file || !sectionId} type="submit">
+                  {busy ? <Spinner inline label="Uploading…" /> : "Upload Roster"}
+                </button>
+              </div>
+            </form>
+
+            {result && (
+              <div
+                className="status-badge posted"
+                style={{
+                  marginTop: 16,
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  fontSize: "0.95rem",
+                  display: "block",
+                  lineHeight: "1.5",
+                }}
+              >
+                <strong>✓ Student roster inserted successfully!</strong>
+                <div style={{ marginTop: 4 }}>
+                  {result.inserted} student{result.inserted === 1 ? "" : "s"} inserted, {result.updated} updated.
+                </div>
+                {result.errors.length > 0 && (
+                  <div style={{ marginTop: 8, color: "var(--absent)" }}>
+                    <strong>Errors encountered:</strong>
+                    <ul style={{ margin: "4px 0 0 18px", padding: 0 }}>
+                      {result.errors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>

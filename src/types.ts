@@ -4,7 +4,7 @@ export type MarkStatus = "present" | "absent";
 export type SessionType = "lecture" | "lab";
 
 export interface AuthState {
-  username: any;
+  username?: string;
   token: string;
   role: Role;
   fullName: string;

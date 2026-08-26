@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { username, password });
-      login({ token: res.data.access_token, role: res.data.role, fullName: res.data.full_name });
+      login({ token: res.data.access_token, role: res.data.role, fullName: res.data.full_name, username });
       navigate(res.data.role === "admin" ? "/admin" : "/faculty");
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || "Login failed. Check your credentials.");

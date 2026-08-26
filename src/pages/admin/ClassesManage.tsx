@@ -35,6 +35,11 @@ export default function ClassesManage() {
     department_id: "", year: "2", name: "", display_name: "", academic_year: "2025-26",
   });
 
+  // Form Collapsible Visibility State
+  const [showDeptForm, setShowDeptForm] = useState(false);
+  const [showSecForm, setShowSecForm] = useState(false);
+  const [showSubForm, setShowSubForm] = useState(false);
+
   // Subject State
   const [subjectForm, setSubjectForm] = useState({ name: "", code: "", department_id: "" });
   const [subjectBusy, setSubjectBusy] = useState(false);
@@ -448,37 +453,49 @@ export default function ClassesManage() {
 
       {/* Departments Management Card */}
       <div className="card">
-        <h3>Departments</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showDeptForm ? 14 : 10 }}>
+          <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>Departments</h3>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => setShowDeptForm(!showDeptForm)}
+            style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showDeptForm ? "▲ Hide Form" : "➕ Add Department ▾"}
+          </button>
+        </div>
         {deptError && <ErrorBanner message={deptError} onDismiss={() => setDeptError("")} />}
-        <form onSubmit={createDept} className="form-grid">
-          <div>
-            <label htmlFor="create-dept-name">Name</label>
-            <input
-              id="create-dept-name"
-              value={deptForm.name}
-              onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })}
-              placeholder="Computer Science & Mining"
-              required
-              disabled={deptBusy}
-            />
-          </div>
-          <div>
-            <label htmlFor="create-dept-code">Code</label>
-            <input
-              id="create-dept-code"
-              value={deptForm.code}
-              onChange={(e) => setDeptForm({ ...deptForm, code: e.target.value })}
-              placeholder="CSM"
-              required
-              disabled={deptBusy}
-            />
-          </div>
-          <div style={{ alignSelf: "end" }}>
-            <button className="btn" type="submit" disabled={deptBusy} aria-label="Add new department">
-              {deptBusy ? <Spinner inline label="Adding…" /> : "Add Department"}
-            </button>
-          </div>
-        </form>
+        {showDeptForm && (
+          <form onSubmit={createDept} className="form-grid" style={{ marginBottom: 16 }}>
+            <div>
+              <label htmlFor="create-dept-name">Name</label>
+              <input
+                id="create-dept-name"
+                value={deptForm.name}
+                onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })}
+                placeholder="Computer Science & Mining"
+                required
+                disabled={deptBusy}
+              />
+            </div>
+            <div>
+              <label htmlFor="create-dept-code">Code</label>
+              <input
+                id="create-dept-code"
+                value={deptForm.code}
+                onChange={(e) => setDeptForm({ ...deptForm, code: e.target.value })}
+                placeholder="CSM"
+                required
+                disabled={deptBusy}
+              />
+            </div>
+            <div style={{ alignSelf: "end" }}>
+              <button className="btn" type="submit" disabled={deptBusy} aria-label="Add new department">
+                {deptBusy ? <Spinner inline label="Adding…" /> : "Add Department"}
+              </button>
+            </div>
+          </form>
+        )}
         {departments.length === 0 ? (
           <p className="hint-text">No departments created yet.</p>
         ) : (
@@ -527,79 +544,91 @@ export default function ClassesManage() {
 
       {/* Sections & Academic Year Card */}
       <div className="card">
-        <h3>Sections & Academic Year</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showSecForm ? 14 : 10 }}>
+          <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>Sections & Academic Year</h3>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => setShowSecForm(!showSecForm)}
+            style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showSecForm ? "▲ Hide Form" : "➕ Add Section ▾"}
+          </button>
+        </div>
         {sectionError && <ErrorBanner message={sectionError} onDismiss={() => setSectionError("")} />}
-        <form onSubmit={createSection} className="form-grid">
-          <div>
-            <label htmlFor="create-sec-dept">Department</label>
-            <select
-              id="create-sec-dept"
-              value={sectionForm.department_id}
-              onChange={(e) => setSectionForm({ ...sectionForm, department_id: e.target.value })}
-              required
-              disabled={sectionBusy}
-            >
-              <option value="">Select department…</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="create-sec-year">Year</label>
-            <select
-              id="create-sec-year"
-              value={sectionForm.year}
-              onChange={(e) => setSectionForm({ ...sectionForm, year: e.target.value })}
-              disabled={sectionBusy}
-            >
-              <option value="1">1st Year</option>
-              <option value="2">2nd Year</option>
-              <option value="3">3rd Year</option>
-              <option value="4">4th Year</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="create-sec-letter">Section Letter</label>
-            <input
-              id="create-sec-letter"
-              value={sectionForm.name}
-              onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })}
-              placeholder="A"
-              required
-              disabled={sectionBusy}
-            />
-          </div>
-          <div>
-            <label htmlFor="create-sec-display">Display Name</label>
-            <input
-              id="create-sec-display"
-              value={sectionForm.display_name}
-              onChange={(e) => setSectionForm({ ...sectionForm, display_name: e.target.value })}
-              placeholder="2nd CSM-A"
-              required
-              disabled={sectionBusy}
-            />
-          </div>
-          <div>
-            <label htmlFor="create-sec-acad">Academic Year</label>
-            <input
-              id="create-sec-acad"
-              value={sectionForm.academic_year}
-              onChange={(e) => setSectionForm({ ...sectionForm, academic_year: e.target.value })}
-              placeholder="2025-26"
-              required
-              disabled={sectionBusy}
-            />
-          </div>
-          <div style={{ alignSelf: "end" }}>
-            <button className="btn" type="submit" disabled={sectionBusy} aria-label="Add new section">
-              {sectionBusy ? <Spinner inline label="Adding…" /> : "Add Section"}
-            </button>
-          </div>
-        </form>
+        {showSecForm && (
+          <form onSubmit={createSection} className="form-grid" style={{ marginBottom: 16 }}>
+            <div>
+              <label htmlFor="create-sec-dept">Department</label>
+              <select
+                id="create-sec-dept"
+                value={sectionForm.department_id}
+                onChange={(e) => setSectionForm({ ...sectionForm, department_id: e.target.value })}
+                required
+                disabled={sectionBusy}
+              >
+                <option value="">Select department…</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="create-sec-year">Year</label>
+              <select
+                id="create-sec-year"
+                value={sectionForm.year}
+                onChange={(e) => setSectionForm({ ...sectionForm, year: e.target.value })}
+                disabled={sectionBusy}
+              >
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="create-sec-letter">Section Letter</label>
+              <input
+                id="create-sec-letter"
+                value={sectionForm.name}
+                onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })}
+                placeholder="A"
+                required
+                disabled={sectionBusy}
+              />
+            </div>
+            <div>
+              <label htmlFor="create-sec-display">Display Name</label>
+              <input
+                id="create-sec-display"
+                value={sectionForm.display_name}
+                onChange={(e) => setSectionForm({ ...sectionForm, display_name: e.target.value })}
+                placeholder="2nd CSM-A"
+                required
+                disabled={sectionBusy}
+              />
+            </div>
+            <div>
+              <label htmlFor="create-sec-acad">Academic Year</label>
+              <input
+                id="create-sec-acad"
+                value={sectionForm.academic_year}
+                onChange={(e) => setSectionForm({ ...sectionForm, academic_year: e.target.value })}
+                placeholder="2025-26"
+                required
+                disabled={sectionBusy}
+              />
+            </div>
+            <div style={{ alignSelf: "end" }}>
+              <button className="btn" type="submit" disabled={sectionBusy} aria-label="Add new section">
+                {sectionBusy ? <Spinner inline label="Adding…" /> : "Add Section"}
+              </button>
+            </div>
+          </form>
+        )}
         <div className="table-responsive" style={{ marginTop: 16 }}>
           <table className="data-table" aria-label="Sections Table">
             <thead>
@@ -664,52 +693,64 @@ export default function ClassesManage() {
 
       {/* Subjects Card */}
       <div className="card">
-        <h3>Subjects</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showSubForm ? 14 : 10 }}>
+          <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>Subjects</h3>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => setShowSubForm(!showSubForm)}
+            style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showSubForm ? "▲ Hide Form" : "➕ Add Subject ▾"}
+          </button>
+        </div>
         {subjectError && <ErrorBanner message={subjectError} onDismiss={() => setSubjectError("")} />}
-        <form onSubmit={createSubject} className="form-grid">
-          <div>
-            <label htmlFor="create-sub-dept">Department</label>
-            <select
-              id="create-sub-dept"
-              value={subjectForm.department_id}
-              onChange={(e) => setSubjectForm({ ...subjectForm, department_id: e.target.value })}
-              required
-              disabled={subjectBusy}
-            >
-              <option value="">Select department…</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="create-sub-name">Subject Name</label>
-            <input
-              id="create-sub-name"
-              value={subjectForm.name}
-              onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
-              required
-              disabled={subjectBusy}
-            />
-          </div>
-          <div>
-            <label htmlFor="create-sub-code">Code</label>
-            <input
-              id="create-sub-code"
-              value={subjectForm.code}
-              onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
-              required
-              disabled={subjectBusy}
-            />
-          </div>
-          <div style={{ alignSelf: "end" }}>
-            <button className="btn" type="submit" disabled={subjectBusy} aria-label="Add new subject">
-              {subjectBusy ? <Spinner inline label="Adding…" /> : "Add Subject"}
-            </button>
-          </div>
-        </form>
+        {showSubForm && (
+          <form onSubmit={createSubject} className="form-grid" style={{ marginBottom: 16 }}>
+            <div>
+              <label htmlFor="create-sub-dept">Department</label>
+              <select
+                id="create-sub-dept"
+                value={subjectForm.department_id}
+                onChange={(e) => setSubjectForm({ ...subjectForm, department_id: e.target.value })}
+                required
+                disabled={subjectBusy}
+              >
+                <option value="">Select department…</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="create-sub-name">Subject Name</label>
+              <input
+                id="create-sub-name"
+                value={subjectForm.name}
+                onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
+                required
+                disabled={subjectBusy}
+              />
+            </div>
+            <div>
+              <label htmlFor="create-sub-code">Code</label>
+              <input
+                id="create-sub-code"
+                value={subjectForm.code}
+                onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
+                required
+                disabled={subjectBusy}
+              />
+            </div>
+            <div style={{ alignSelf: "end" }}>
+              <button className="btn" type="submit" disabled={subjectBusy} aria-label="Add new subject">
+                {subjectBusy ? <Spinner inline label="Adding…" /> : "Add Subject"}
+              </button>
+            </div>
+          </form>
+        )}
         <div className="table-responsive" style={{ marginTop: 16 }}>
           <table className="data-table" aria-label="Subjects Table">
             <thead>
