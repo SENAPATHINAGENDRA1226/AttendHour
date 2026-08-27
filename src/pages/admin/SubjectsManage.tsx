@@ -47,6 +47,18 @@ export default function SubjectsManage() {
   const [allocError, setAllocError] = useState("");
   const [allocSuccess, setAllocSuccess] = useState("");
 
+  // Bulk Upload State
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{
+    subjects_created: number;
+    subjects_updated: number;
+    allocations_created: number;
+    errors: string[];
+  } | null>(null);
+  const [uploadError, setUploadError] = useState("");
+
   async function loadData() {
     setLoading(true);
     setLoadError("");
@@ -215,6 +227,46 @@ export default function SubjectsManage() {
     }
   }
 
+  // --- Bulk Roster Upload ---
+  async function handleSubjectUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!uploadFile) return;
+    setUploadBusy(true);
+    setUploadError("");
+    setUploadResult(null);
+    const fd = new FormData();
+    fd.append("file", uploadFile);
+    try {
+      const res = await api.post("/admin/subjects/upload", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setUploadResult(res.data);
+      setUploadFile(null);
+      await loadData();
+    } catch (err: any) {
+      setUploadError(err?.response?.data?.detail || err?.message || "Subject roster upload failed.");
+    } finally {
+      setUploadBusy(false);
+    }
+  }
+
+  function downloadRosterTemplate() {
+    const content =
+      "subject_name,subject_code,year,faculty_username,section_name\n" +
+      "Operating Systems,CS301,2,faculty1,2nd CSM-A\n" +
+      "Operating Systems,CS301,2,faculty1,2nd CSM-B\n" +
+      "Database Management Systems,CS302,3,faculty2,3rd CSM-A\n" +
+      "Computer Networks,CS303,3,faculty2,3rd CSM-A\n";
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "subject_faculty_roster_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Filter subjects
   const filteredSubjects = subjects.filter((s) => {
     const matchesSearch =
@@ -249,15 +301,109 @@ export default function SubjectsManage() {
             Add subjects by Academic Year (1st, 2nd, 3rd, 4th Year) and allocate them to teaching faculty.
           </p>
         </div>
-        <button
-          className="btn"
-          type="button"
-          onClick={() => setShowAddForm(!showAddForm)}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          {showAddForm ? "▲ Hide Form" : "➕ Add New Subject"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => {
+              setShowBulkUpload(!showBulkUpload);
+              if (showAddForm) setShowAddForm(false);
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showBulkUpload ? "Close Roster Upload" : "📁 Bulk Import Roster"}
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => {
+              setShowAddForm(!showAddForm);
+              if (showBulkUpload) setShowBulkUpload(false);
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            {showAddForm ? "▲ Hide Form" : "➕ Add New Subject"}
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Roster CSV / XLSX Upload Card */}
+      {showBulkUpload && (
+        <div className="card" style={{ border: "2px solid var(--primary)", marginBottom: 24, animation: "fadeIn 0.2s ease" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <h3 style={{ margin: 0 }}>Bulk Import Subjects & Faculty Allocations</h3>
+            <button
+              className="btn secondary"
+              type="button"
+              onClick={downloadRosterTemplate}
+              style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              📥 Download CSV Template
+            </button>
+          </div>
+
+          <p className="hint-text" style={{ marginBottom: 14, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
+            Upload a CSV or Excel (.xlsx) file to create multiple subjects and directly allocate faculty to sections in one go.
+            <br />
+            <strong>Required columns:</strong> <code>subject_name</code>, <code>subject_code</code>.
+            <br />
+            <strong>Optional columns:</strong> <code>year</code> (1..4), <code>faculty_username</code> (or email), <code>section_name</code> (e.g. 2nd CSM-A).
+          </p>
+
+          {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
+
+          <form onSubmit={handleSubjectUpload} className="form-grid">
+            <div style={{ gridColumn: "span 2" }}>
+              <label htmlFor="subject-roster-file">Select CSV or Excel File</label>
+              <input
+                id="subject-roster-file"
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                required
+                disabled={uploadBusy}
+                style={{ width: "100%", marginTop: 4 }}
+              />
+            </div>
+            <div style={{ alignSelf: "end" }}>
+              <button className="btn" type="submit" disabled={uploadBusy || !uploadFile}>
+                {uploadBusy ? <Spinner inline label="Importing Roster…" /> : "Upload & Process Roster"}
+              </button>
+            </div>
+          </form>
+
+          {uploadResult && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                borderRadius: 6,
+                background: uploadResult.errors.length > 0 && uploadResult.subjects_created === 0 && uploadResult.allocations_created === 0
+                  ? "var(--absent-bg, #fee2e2)"
+                  : "var(--present-bg, #dcfce7)",
+                color: uploadResult.errors.length > 0 && uploadResult.subjects_created === 0 && uploadResult.allocations_created === 0
+                  ? "var(--absent, #b91c1c)"
+                  : "var(--present, #15803d)",
+                fontSize: "0.88rem",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                ✓ Processing complete: Created {uploadResult.subjects_created} subject(s), updated {uploadResult.subjects_updated} subject(s), created {uploadResult.allocations_created} faculty allocation(s).
+              </div>
+              {uploadResult.errors.length > 0 && (
+                <div style={{ marginTop: 8, color: "var(--absent, #b91c1c)" }}>
+                  <strong>Errors / Warnings ({uploadResult.errors.length}):</strong>
+                  <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+                    {uploadResult.errors.map((err, i) => (
+                      <li key={i} style={{ fontSize: "0.82rem" }}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add New Subject Form Card */}
       {showAddForm && (
