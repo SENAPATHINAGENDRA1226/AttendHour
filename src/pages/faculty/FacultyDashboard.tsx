@@ -72,7 +72,10 @@ export default function FacultyDashboard() {
 
       {/* Date selector card */}
       <div className="card">
-        <label htmlFor="attendance-date">📅 Attendance date</label>
+        <label htmlFor="attendance-date" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary)" }}>calendar_today</span>
+          Attendance date
+        </label>
         <input
           id="attendance-date"
           type="date"

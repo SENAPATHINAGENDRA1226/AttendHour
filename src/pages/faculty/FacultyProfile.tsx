@@ -31,10 +31,16 @@ export default function FacultyProfile() {
               Assistant Professor
             </div>
 
-            <div style={{ display: "flex", gap: 24, marginTop: 16, flexWrap: "wrap", fontSize: "0.85rem", color: "var(--ink-soft)" }}>
-              <div>🪪 CSM-1042</div>
-              <div>✉️ k.ramesh@college.edu</div>
-              <div>🎓 CSE (AI & ML)</div>
+            <div style={{ display: "flex", gap: 24, marginTop: 16, flexWrap: "wrap", fontSize: "0.85rem", color: "var(--on-surface-variant)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary)" }}>badge</span> CSM-1042
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--secondary)" }}>mail</span> {auth?.username ? `${auth.username}@faculty.edu` : "faculty@college.edu"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--primary-container)" }}>school</span> CSE Department
+              </div>
             </div>
           </div>
         </div>
@@ -42,10 +48,10 @@ export default function FacultyProfile() {
 
       {/* Allocated Sections & Subjects Card */}
       <div className="card">
-        <h3>MY SECTIONS & SUBJECTS</h3>
+        <h3>MY SECTIONS &amp; SUBJECTS</h3>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+          <div style={{ border: "1px solid var(--surface-variant)", borderRadius: 12, padding: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div style={{ fontWeight: 700, fontSize: "1rem" }}>2nd CSM-A</div>
               <span className="status-badge pending">Read-only</span>
@@ -59,7 +65,7 @@ export default function FacultyProfile() {
             </div>
           </div>
 
-          <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
+          <div style={{ border: "1px solid var(--surface-variant)", borderRadius: 12, padding: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div style={{ fontWeight: 700, fontSize: "1rem" }}>2nd CSM-C</div>
               <span className="status-badge pending">Read-only</span>
@@ -77,14 +83,11 @@ export default function FacultyProfile() {
       {/* Account Action Buttons */}
       <div className="card" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <button className="btn secondary" onClick={() => alert("Contact department admin to update your password.")}>
-          🔒 Change password
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>lock</span>
+          <span>Change password</span>
         </button>
         <button className="btn secondary" onClick={handleSignOut} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M13 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/>
-            <path d="M11 16l-4-4 4-4"/>
-            <path d="M7 12h10"/>
-          </svg>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
           <span>Sign out</span>
         </button>
       </div>

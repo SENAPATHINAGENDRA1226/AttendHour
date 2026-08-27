@@ -34,13 +34,10 @@ export default function Login() {
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-header">
           <div className="login-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
+            <span className="material-symbols-outlined" style={{ fontSize: 32 }}>badge</span>
           </div>
-          <h1>Department Register</h1>
-          <p className="tagline">Digital attendance for faculty &amp; admin</p>
+          <h1>FacultySync</h1>
+          <p className="tagline">Department Attendance &amp; Academic Log</p>
         </div>
 
         <div className="form-grid" style={{ gridTemplateColumns: "1fr", gap: "14px" }}>

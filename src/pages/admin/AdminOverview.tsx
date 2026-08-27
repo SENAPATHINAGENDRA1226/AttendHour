@@ -52,10 +52,10 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
       {/* 4 Metric Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
         <div className="card" style={{ marginBottom: 0 }}>
-          <div style={{ color: "var(--ink-soft)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
-            <span>👥</span> Total Faculty
+          <div style={{ color: "var(--on-surface-variant)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>groups</span> Total Faculty
           </div>
-          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)", color: "var(--on-surface)" }}>
             {stats ? stats.total_faculty : "-"}
           </div>
           <div style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>
@@ -64,28 +64,28 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
-          <div style={{ color: "var(--ink-soft)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
-            <span>📚</span> Total Sections
+          <div style={{ color: "var(--on-surface-variant)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--secondary)" }}>view_agenda</span> Total Sections
           </div>
-          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)", color: "var(--on-surface)" }}>
             {stats ? stats.total_sections : data.length}
           </div>
           <div style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>Active department sections</div>
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
-          <div style={{ color: "var(--ink-soft)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
-            <span>🎓</span> Total Students
+          <div style={{ color: "var(--on-surface-variant)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--secondary-container)" }}>school</span> Total Students
           </div>
-          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", fontFamily: "var(--font-display)", color: "var(--on-surface)" }}>
             {stats ? stats.total_students : "-"}
           </div>
           <div style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>Enrolled in master list</div>
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
-          <div style={{ color: "var(--ink-soft)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
-            <span>📈</span> Today's Attendance
+          <div style={{ color: "var(--on-surface-variant)", fontSize: "0.82rem", fontWeight: 600, display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>trending_up</span> Today's Attendance
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 700, margin: "8px 0 4px", color: "var(--primary)", fontFamily: "var(--font-display)" }}>
             {stats ? `${stats.today_attendance_percentage}%` : "-"}
@@ -97,8 +97,8 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
       </div>
 
       {/* MANAGE Cards Grid */}
-      <h3 style={{ fontSize: "0.82rem", color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
-        MANAGE
+      <h3 style={{ fontSize: "0.82rem", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
+        Quick Management
       </h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 32 }}>
         <div
@@ -106,11 +106,16 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
           style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
           onClick={() => onNavigateTab && onNavigateTab("faculty")}
         >
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>👥 Faculty Management</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Add, edit or deactivate teaching staff</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--primary-fixed)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span className="material-symbols-outlined">groups</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Faculty Management</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: 2 }}>Add, edit or deactivate staff</div>
+            </div>
           </div>
-          <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
+          <span className="material-symbols-outlined" style={{ color: "var(--ink-muted)" }}>chevron_right</span>
         </div>
 
         <div
@@ -118,11 +123,16 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
           style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
           onClick={() => onNavigateTab && onNavigateTab("subjects")}
         >
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>📖 Subjects & Allocations</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Add year-wise subjects and allocate faculty</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--primary-fixed)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span className="material-symbols-outlined">menu_book</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Subjects &amp; Allocations</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: 2 }}>Year-wise subjects &amp; faculty</div>
+            </div>
           </div>
-          <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
+          <span className="material-symbols-outlined" style={{ color: "var(--ink-muted)" }}>chevron_right</span>
         </div>
 
         <div
@@ -130,11 +140,16 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
           style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
           onClick={() => onNavigateTab && onNavigateTab("students")}
         >
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>📤 Student Master List</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Upload Excel/CSV and correct entries</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--primary-fixed)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span className="material-symbols-outlined">school</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Student Master List</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: 2 }}>Upload Excel/CSV roster</div>
+            </div>
           </div>
-          <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
+          <span className="material-symbols-outlined" style={{ color: "var(--ink-muted)" }}>chevron_right</span>
         </div>
 
         <div
@@ -142,11 +157,16 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
           style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
           onClick={() => onNavigateTab && onNavigateTab("timetable")}
         >
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>📅 Sections & Timetable</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Create sections and allocate periods</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--primary-fixed)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span className="material-symbols-outlined">calendar_month</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>Sections &amp; Timetable</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: 2 }}>Sections and period schedule</div>
+            </div>
           </div>
-          <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
+          <span className="material-symbols-outlined" style={{ color: "var(--ink-muted)" }}>chevron_right</span>
         </div>
       </div>
 

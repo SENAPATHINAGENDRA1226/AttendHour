@@ -43,19 +43,6 @@ export default function AdminDashboard() {
 
   return (
     <SidebarLayout>
-      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap", borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={`btn ${activeTab === t.key ? "" : "secondary"}`}
-            style={{ borderRadius: 20, padding: "6px 16px", fontSize: "0.82rem" }}
-            onClick={() => handleTabChange(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {activeTab === "overview" && <AdminOverview onNavigateTab={(target) => handleTabChange(target)} />}
       {activeTab === "faculty" && <FacultyManage />}
       {activeTab === "subjects" && <SubjectsManage />}
