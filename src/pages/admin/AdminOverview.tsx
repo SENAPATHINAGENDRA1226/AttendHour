@@ -100,7 +100,7 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
       <h3 style={{ fontSize: "0.82rem", color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
         MANAGE
       </h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 32 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 32 }}>
         <div
           className="card"
           style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
@@ -109,6 +109,18 @@ export default function AdminOverview({ onNavigateTab }: AdminOverviewProps) {
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>👥 Faculty Management</div>
             <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Add, edit or deactivate teaching staff</div>
+          </div>
+          <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
+        </div>
+
+        <div
+          className="card"
+          style={{ marginBottom: 0, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          onClick={() => onNavigateTab && onNavigateTab("subjects")}
+        >
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>📖 Subjects & Allocations</div>
+            <div style={{ fontSize: "0.8rem", color: "var(--ink-soft)", marginTop: 2 }}>Add year-wise subjects and allocate faculty</div>
           </div>
           <span style={{ fontSize: "1.2rem", color: "var(--ink-muted)" }}>›</span>
         </div>

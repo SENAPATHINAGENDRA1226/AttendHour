@@ -32,7 +32,6 @@ export default function FacultyManage() {
   // Data for allocation form
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [allSections, setAllSections] = useState<Section[]>([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Allocation form
   const [allocSubjectId, setAllocSubjectId] = useState<string>("");
@@ -40,9 +39,9 @@ export default function FacultyManage() {
   const [allocSaving, setAllocSaving] = useState(false);
   const [allocFormError, setAllocFormError] = useState("");
 
-  // Inline subject creation
+  // Inline subject creation with Year
   const [showNewSubject, setShowNewSubject] = useState(false);
-  const [newSubjectForm, setNewSubjectForm] = useState({ name: "", code: "" });
+  const [newSubjectForm, setNewSubjectForm] = useState({ name: "", code: "", year: "2" });
   const [newSubjectBusy, setNewSubjectBusy] = useState(false);
   const [newSubjectError, setNewSubjectError] = useState("");
 
@@ -60,7 +59,6 @@ export default function FacultyManage() {
   }
 
   async function loadSubjectsAndSections() {
-    if (dataLoaded) return;
     try {
       const [subRes, secRes] = await Promise.all([
         api.get<Subject[]>("/admin/subjects"),
@@ -68,7 +66,6 @@ export default function FacultyManage() {
       ]);
       setAllSubjects(subRes.data);
       setAllSections(secRes.data);
-      setDataLoaded(true);
     } catch { /* ignore */ }
   }
 
@@ -235,10 +232,15 @@ export default function FacultyManage() {
     setNewSubjectBusy(true);
     setNewSubjectError("");
     try {
-      const res = await api.post<Subject>("/admin/subjects", newSubjectForm);
+      const payload = {
+        name: newSubjectForm.name.trim(),
+        code: newSubjectForm.code.trim().toUpperCase(),
+        year: newSubjectForm.year ? Number(newSubjectForm.year) : null,
+      };
+      const res = await api.post<Subject>("/admin/subjects", payload);
       setAllSubjects((prev) => [...prev, res.data]);
       setAllocSubjectId(String(res.data.id));
-      setNewSubjectForm({ name: "", code: "" });
+      setNewSubjectForm({ name: "", code: "", year: "2" });
       setShowNewSubject(false);
     } catch (err: any) {
       setNewSubjectError(err?.response?.data?.detail || err?.message || "Could not create subject.");
@@ -513,7 +515,9 @@ export default function FacultyManage() {
                               >
                                 <option value="">— Select subject —</option>
                                 {allSubjects.map((s) => (
-                                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                                  <option key={s.id} value={s.id}>
+                                    {s.name} ({s.code}){s.year ? ` — ${s.year === 1 ? "1st" : s.year === 2 ? "2nd" : s.year === 3 ? "3rd" : "4th"} Year` : ""}
+                                  </option>
                                 ))}
                               </select>
                               <button
@@ -532,7 +536,7 @@ export default function FacultyManage() {
                             <div style={{ background: "var(--surface, #fff)", padding: 12, borderRadius: 6, border: "1px solid var(--border)", marginBottom: 10 }}>
                               {newSubjectError && <ErrorBanner message={newSubjectError} onDismiss={() => setNewSubjectError("")} style={{ marginBottom: 8 }} />}
                               <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
-                                <div style={{ flex: 1, minWidth: 140 }}>
+                                <div style={{ flex: 2, minWidth: 140 }}>
                                   <label style={{ fontSize: "0.8rem" }}>Subject Name</label>
                                   <input
                                     value={newSubjectForm.name}
@@ -552,6 +556,20 @@ export default function FacultyManage() {
                                     disabled={newSubjectBusy}
                                   />
                                 </div>
+                                <div style={{ flex: 1, minWidth: 110 }}>
+                                  <label style={{ fontSize: "0.8rem" }}>Year</label>
+                                  <select
+                                    value={newSubjectForm.year}
+                                    onChange={(e) => setNewSubjectForm({ ...newSubjectForm, year: e.target.value })}
+                                    disabled={newSubjectBusy}
+                                    style={{ fontSize: "0.82rem" }}
+                                  >
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                  </select>
+                                </div>
                                 <button
                                   className="btn"
                                   style={{ fontSize: "0.8rem" }}
@@ -567,38 +585,82 @@ export default function FacultyManage() {
 
                           {/* Section multi-select */}
                           <div style={{ marginBottom: 12 }}>
-                            <label style={{ fontSize: "0.82rem" }}>Sections (select one or more)</label>
-                            <div style={{
-                              display: "grid",
-                              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                              gap: 6,
-                              maxHeight: 200,
-                              overflowY: "auto",
-                              padding: 8,
-                              border: "1px solid var(--border)",
-                              borderRadius: 6,
-                              background: "var(--surface, #fff)",
-                            }}>
-                              {allSections.length === 0 ? (
-                                <span style={{ color: "var(--ink-soft)", fontSize: "0.82rem" }}>No sections available.</span>
-                              ) : (
-                                allSections.map((sec) => (
-                                  <label key={sec.id} style={{
-                                    display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem",
-                                    cursor: "pointer", padding: "4px 6px", borderRadius: 4,
-                                    background: allocSectionIds.includes(sec.id) ? "var(--primary-light, #e8eaf6)" : "transparent",
+                            {(() => {
+                              const selectedSub = allSubjects.find((s) => String(s.id) === allocSubjectId);
+                              const matchingSecs = selectedSub && selectedSub.year
+                                ? allSections.filter((sec) => sec.year === selectedSub.year)
+                                : allSections;
+                              const allMatchingSelected = matchingSecs.length > 0 && matchingSecs.every((sec) => allocSectionIds.includes(sec.id));
+
+                              return (
+                                <>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                    <label style={{ fontSize: "0.82rem", margin: 0 }}>
+                                      Sections {selectedSub?.year ? `(Year ${selectedSub.year})` : ""} (select one or more)
+                                    </label>
+                                    {matchingSecs.length > 0 && (
+                                      <button
+                                        type="button"
+                                        className="btn secondary"
+                                        style={{ padding: "2px 6px", fontSize: "0.72rem" }}
+                                        onClick={() => {
+                                          const mIds = matchingSecs.map((s) => s.id);
+                                          if (allMatchingSelected) {
+                                            setAllocSectionIds((prev) => prev.filter((id) => !mIds.includes(id)));
+                                          } else {
+                                            setAllocSectionIds((prev) => Array.from(new Set([...prev, ...mIds])));
+                                          }
+                                        }}
+                                      >
+                                        {allMatchingSelected ? "Deselect matching" : "Select matching"}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                                    gap: 6,
+                                    maxHeight: 200,
+                                    overflowY: "auto",
+                                    padding: 8,
+                                    border: "1px solid var(--border)",
+                                    borderRadius: 6,
+                                    background: "var(--surface, #fff)",
                                   }}>
-                                    <input
-                                      type="checkbox"
-                                      checked={allocSectionIds.includes(sec.id)}
-                                      onChange={() => toggleSectionSelection(sec.id)}
-                                      disabled={allocSaving}
-                                    />
-                                    {sec.display_name}
-                                  </label>
-                                ))
-                              )}
-                            </div>
+                                    {allSections.length === 0 ? (
+                                      <span style={{ color: "var(--ink-soft)", fontSize: "0.82rem" }}>No sections available.</span>
+                                    ) : (
+                                      allSections.map((sec) => {
+                                        const isMatchingYear = selectedSub?.year ? sec.year === selectedSub.year : true;
+                                        return (
+                                          <label key={sec.id} style={{
+                                            display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem",
+                                            cursor: "pointer", padding: "4px 6px", borderRadius: 4,
+                                            border: isMatchingYear ? "1px solid var(--border)" : "1px dashed var(--border)",
+                                            background: allocSectionIds.includes(sec.id) ? "var(--primary-light, #e8eaf6)" : "transparent",
+                                            opacity: isMatchingYear ? 1 : 0.65,
+                                          }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={allocSectionIds.includes(sec.id)}
+                                              onChange={() => toggleSectionSelection(sec.id)}
+                                              disabled={allocSaving}
+                                            />
+                                            <span>
+                                              <strong>{sec.display_name}</strong>
+                                              <span style={{ fontSize: "0.72rem", color: "var(--ink-soft)", marginLeft: 4 }}>
+                                                (Y{sec.year})
+                                              </span>
+                                            </span>
+                                          </label>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
 
                           <button className="btn" type="submit" disabled={allocSaving || !allocSubjectId || allocSectionIds.length === 0}>

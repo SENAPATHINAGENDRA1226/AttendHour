@@ -41,11 +41,11 @@ export default function ClassesManage() {
   const [showSubForm, setShowSubForm] = useState(false);
 
   // Subject State
-  const [subjectForm, setSubjectForm] = useState({ name: "", code: "" });
+  const [subjectForm, setSubjectForm] = useState({ name: "", code: "", year: "2" });
   const [subjectBusy, setSubjectBusy] = useState(false);
   const [subjectError, setSubjectError] = useState("");
   const [editSubjectItem, setEditSubjectItem] = useState<Subject | null>(null);
-  const [editSubjectForm, setEditSubjectForm] = useState({ name: "", code: "" });
+  const [editSubjectForm, setEditSubjectForm] = useState({ name: "", code: "", year: "2" });
 
   async function load() {
     setLoading(true);
@@ -196,8 +196,12 @@ export default function ClassesManage() {
     setSubjectError("");
     setSubjectBusy(true);
     try {
-      await api.post("/admin/subjects", subjectForm);
-      setSubjectForm({ name: "", code: "" });
+      await api.post("/admin/subjects", {
+        name: subjectForm.name.trim(),
+        code: subjectForm.code.trim().toUpperCase(),
+        year: subjectForm.year ? Number(subjectForm.year) : null,
+      });
+      setSubjectForm({ name: "", code: "", year: subjectForm.year });
       await load();
     } catch (err: any) {
       setSubjectError(err?.response?.data?.detail || err?.message || "Could not create subject.");
@@ -212,7 +216,11 @@ export default function ClassesManage() {
     setSubjectError("");
     setSubjectBusy(true);
     try {
-      await api.patch(`/admin/subjects/${editSubjectItem.id}`, editSubjectForm);
+      await api.patch(`/admin/subjects/${editSubjectItem.id}`, {
+        name: editSubjectForm.name.trim(),
+        code: editSubjectForm.code.trim().toUpperCase(),
+        year: editSubjectForm.year ? Number(editSubjectForm.year) : null,
+      });
       setEditSubjectItem(null);
       await load();
     } catch (err: any) {
@@ -413,6 +421,20 @@ export default function ClassesManage() {
                 required
                 disabled={subjectBusy}
               />
+            </div>
+            <div>
+              <label htmlFor="edit-sub-year">Target Year</label>
+              <select
+                id="edit-sub-year"
+                value={editSubjectForm.year}
+                onChange={(e) => setEditSubjectForm({ ...editSubjectForm, year: e.target.value })}
+                disabled={subjectBusy}
+              >
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
             </div>
             <div style={{ alignSelf: "end", display: "flex", gap: 8 }}>
               <button className="btn" type="submit" disabled={subjectBusy} aria-label="Save subject changes">
@@ -708,6 +730,20 @@ export default function ClassesManage() {
                 disabled={subjectBusy}
               />
             </div>
+            <div>
+              <label htmlFor="create-sub-year">Target Year</label>
+              <select
+                id="create-sub-year"
+                value={subjectForm.year}
+                onChange={(e) => setSubjectForm({ ...subjectForm, year: e.target.value })}
+                disabled={subjectBusy}
+              >
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
             <div style={{ alignSelf: "end" }}>
               <button className="btn" type="submit" disabled={subjectBusy} aria-label="Add new subject">
                 {subjectBusy ? <Spinner inline label="Adding…" /> : "Add Subject"}
@@ -721,13 +757,14 @@ export default function ClassesManage() {
               <tr>
                 <th scope="col">Subject</th>
                 <th scope="col">Code</th>
+                <th scope="col">Year</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
               {subjects.length === 0 ? (
                 <tr>
-                  <td colSpan={3} style={{ textAlign: "center", color: "var(--ink-soft)" }}>
+                  <td colSpan={4} style={{ textAlign: "center", color: "var(--ink-soft)" }}>
                     No subjects created yet.
                   </td>
                 </tr>
@@ -737,6 +774,15 @@ export default function ClassesManage() {
                     <td>{s.name}</td>
                     <td className="mono">{s.code}</td>
                     <td>
+                      {s.year ? (
+                        <span className="status-badge pending" style={{ color: "var(--ink)" }}>
+                          {s.year === 1 ? "1st" : s.year === 2 ? "2nd" : s.year === 3 ? "3rd" : "4th"} Year
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>—</span>
+                      )}
+                    </td>
+                    <td>
                       <button
                         className="btn secondary"
                         style={{ marginRight: 6 }}
@@ -745,6 +791,7 @@ export default function ClassesManage() {
                           setEditSubjectForm({
                             name: s.name,
                             code: s.code,
+                            year: s.year ? String(s.year) : "2",
                           });
                         }}
                         aria-label={`Edit subject ${s.name}`}

@@ -30,14 +30,18 @@ export interface Subject {
   id: number;
   name: string;
   code: string;
+  year?: number | null;
 }
 
 export interface FacultyAllocation {
   id: number;
   faculty_id: number;
+  faculty_name?: string;
+  faculty_username?: string;
   subject_id: number;
   subject_name: string;
   subject_code: string;
+  subject_year?: number | null;
   section_id: number;
   section_display_name: string;
   is_active: boolean;
