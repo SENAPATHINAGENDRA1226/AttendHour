@@ -2,10 +2,10 @@ import axios from "axios";
 
 const defaultBaseUrl = import.meta.env.DEV
   ? "/api"
-  : "https://hourlogix-backend.onrender.com";
+  : (import.meta.env.VITE_API_BASE_URL || "https://hourlogix-backend.onrender.com");
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || defaultBaseUrl,
+  baseURL: defaultBaseUrl,
 });
 
 

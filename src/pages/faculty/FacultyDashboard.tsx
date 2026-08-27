@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { TodayClass } from "../../types";
@@ -52,78 +52,21 @@ export default function FacultyDashboard() {
     return () => window.removeEventListener("outbox-changed", handleOutboxChange);
   }, []);
 
-  const groupedClasses = useMemo(() => {
-    const map = new Map<string, {
-      section_id: number;
-      section_name: string;
-      subject_id: number;
-      subject_name: string;
-      periods: number[];
-      isPending: boolean;
-      outboxCount: number;
-      timetable_entry_id: number;
-    }>();
-
-    classes.forEach((cls) => {
-      const key = `${cls.section_id}-${cls.subject_id}`;
-      const existing = map.get(key);
-      const outCount = outboxItems.filter(
-        (o) => o.payload?.section_id === cls.section_id && o.payload?.date === date && o.payload?.period_numbers?.includes(cls.period_number)
-      ).length;
-
-      if (!existing) {
-        map.set(key, {
-          section_id: cls.section_id,
-          section_name: cls.section_name,
-          subject_id: cls.subject_id,
-          subject_name: cls.subject_name,
-          periods: [cls.period_number],
-          isPending: cls.session_status !== "held",
-          outboxCount: outCount,
-          timetable_entry_id: cls.timetable_entry_id,
-        });
-      } else {
-        if (!existing.periods.includes(cls.period_number)) {
-          existing.periods.push(cls.period_number);
-          existing.periods.sort((a, b) => a - b);
-        }
-        if (cls.session_status !== "held") existing.isPending = true;
-        existing.outboxCount += outCount;
-      }
-    });
-
-    return Array.from(map.values());
-  }, [classes, outboxItems, date]);
-
-  function goMarkGroup(group: { section_id: number; section_name: string; subject_id: number; subject_name: string; periods: number[] }) {
+  function goMark(cls: TodayClass) {
     const params = new URLSearchParams({
-      section_id: String(group.section_id),
-      section_name: group.section_name,
-      subject_id: String(group.subject_id),
-      subject_name: group.subject_name,
+      section_id: String(cls.section_id),
+      section_name: cls.section_name,
+      subject_id: String(cls.subject_id),
+      subject_name: cls.subject_name,
       date: date,
-      periods: group.periods.join(","),
     });
     navigate(`/faculty/mark?${params.toString()}`);
-  }
-
-  function getPeriodTime(periodNumber: number): string {
-    const times: Record<number, string> = {
-      1: "09:00 - 09:50",
-      2: "09:50 - 10:40",
-      3: "10:40 - 11:30",
-      4: "11:30 - 12:20",
-      5: "01:10 - 02:00",
-      6: "02:00 - 02:50",
-      7: "02:50 - 03:40",
-    };
-    return times[periodNumber] || "10:40 - 11:30";
   }
 
   return (
     <SidebarLayout>
       <h1 className="page-heading">Good morning, {firstName}</h1>
-      <p className="page-subheading">Your classes for the selected date, straight from the department timetable.</p>
+      <p className="page-subheading">Your allocated classes. Select a date and take attendance.</p>
 
       {error && <ErrorBanner message={error} onRetry={load} />}
 
@@ -143,54 +86,45 @@ export default function FacultyDashboard() {
         <div style={{ padding: "40px 0", textAlign: "center" }}>
           <Spinner label="Loading schedule…" />
         </div>
-      ) : groupedClasses.length === 0 ? (
+      ) : classes.length === 0 ? (
         <div className="card" style={{ textAlign: "center", color: "var(--ink-soft)" }}>
-          No classes scheduled for {date}.
+          No classes allocated to you. Contact admin to set up your allocations.
         </div>
       ) : (
-        groupedClasses.map((grp) => {
-          const isMultiple = grp.periods.length > 1;
-          const periodLabel = isMultiple
-            ? `Period ${grp.periods.join(" & ")} (Double Period)`
-            : `Period ${grp.periods[0]}`;
+        classes.map((cls) => {
+          const outCount = outboxItems.filter(
+            (o) => o.payload?.section_id === cls.section_id && o.payload?.subject_id === cls.subject_id && o.payload?.date === date
+          ).length;
 
-          const periodTimeLabel = isMultiple
-            ? `${getPeriodTime(grp.periods[0]).split(" - ")[0]} - ${getPeriodTime(grp.periods[grp.periods.length - 1]).split(" - ")[1]}`
-            : getPeriodTime(grp.periods[0]);
+          const postedCount = cls.periods_posted.length;
+          const hasPosted = postedCount > 0;
 
           return (
-            <div key={`${grp.section_id}-${grp.subject_id}`} className="class-card">
+            <div key={`${cls.section_id}-${cls.subject_id}`} className="class-card">
               <div className="class-card-header">
-                <div className="class-title">{grp.section_name}</div>
+                <div className="class-title">{cls.section_name}</div>
                 <div>
-                  {grp.outboxCount > 0 ? (
-                    <span className="status-badge pending">Pending Sync ({grp.outboxCount})</span>
-                  ) : grp.isPending ? (
-                    <span className="status-badge pending">Pending</span>
+                  {outCount > 0 ? (
+                    <span className="status-badge pending">Pending Sync ({outCount})</span>
+                  ) : hasPosted ? (
+                    <span className="status-badge posted">✓ {postedCount} period{postedCount > 1 ? "s" : ""} posted</span>
                   ) : (
-                    <span className="status-badge posted">✓ Posted</span>
+                    <span className="status-badge pending">No attendance yet</span>
                   )}
                 </div>
               </div>
 
-              <div className="class-subject">{grp.subject_name}</div>
+              <div className="class-subject">{cls.subject_name} ({cls.subject_code})</div>
 
-              <div className="period-pill">
-                <span>{periodLabel}</span>
-                <span>🕒 {periodTimeLabel}</span>
-              </div>
-
-              {grp.isPending ? (
-                <button className="btn large" onClick={() => goMarkGroup(grp)}>
-                  Take Attendance
-                </button>
-              ) : (
-                <div>
-                  <button className="btn secondary large" onClick={() => goMarkGroup(grp)}>
-                    View / Edit Attendance
-                  </button>
+              {hasPosted && (
+                <div className="period-pill">
+                  <span>Posted periods: {cls.periods_posted.join(", ")}</span>
                 </div>
               )}
+
+              <button className="btn large" onClick={() => goMark(cls)}>
+                {hasPosted ? "View / Edit Attendance" : "Take Attendance"}
+              </button>
             </div>
           );
         })

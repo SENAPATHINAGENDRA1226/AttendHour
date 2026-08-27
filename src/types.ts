@@ -30,7 +30,17 @@ export interface Subject {
   id: number;
   name: string;
   code: string;
-  department_id: number;
+}
+
+export interface FacultyAllocation {
+  id: number;
+  faculty_id: number;
+  subject_id: number;
+  subject_name: string;
+  subject_code: string;
+  section_id: number;
+  section_display_name: string;
+  is_active: boolean;
 }
 
 export interface Faculty {
@@ -61,15 +71,13 @@ export interface TimetableEntry {
 }
 
 export interface TodayClass {
-  timetable_entry_id: number;
+  allocation_id: number;
   section_id: number;
   section_name: string;
   subject_id: number;
   subject_name: string;
-  period_number: number;
-  session_type: SessionType;
-  already_posted: boolean;
-  session_status?: SessionStatus | null;
+  subject_code: string;
+  periods_posted: number[];
 }
 
 export interface StudentMark {

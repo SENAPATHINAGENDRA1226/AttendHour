@@ -64,10 +64,8 @@ export default function TimetableManage() {
 
   const currentSection = sections.find((s) => s.id === selectedSectionId) || sections[0];
 
-  // Subjects relevant to current section's department
-  const sectionSubjects = subjects.filter(
-    (sub) => !currentSection || sub.department_id === currentSection.department_id || true
-  );
+  // All subjects are available across sections
+  const sectionSubjects = subjects;
 
   // Filter timetable entries for current section
   const sectionEntries = entries.filter((e) => e.section_id === selectedSectionId);
@@ -119,6 +117,14 @@ export default function TimetableManage() {
     try {
       if (modalSlot.existingEntry) {
         await api.delete(`/admin/timetable/${modalSlot.existingEntry.id}`);
+      }
+
+      // If assigning a combined lab, remove any existing slot in the next period for this section
+      if (modalForm.session_type === "lab" && modalSlot.period < PERIODS[PERIODS.length - 1]) {
+        const nextSlot = getSlotEntry(modalSlot.dayIndex, modalSlot.period + 1);
+        if (nextSlot && nextSlot.id !== modalSlot.existingEntry?.id) {
+          await api.delete(`/admin/timetable/${nextSlot.id}`);
+        }
       }
 
       await api.post("/admin/timetable", {
@@ -273,13 +279,6 @@ export default function TimetableManage() {
             <div className="timetable-header-title">
               <span>WEEKLY TIMETABLE — {currentSection.display_name.toUpperCase()}</span>
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {subjects.map((sub) => (
-                <span key={sub.id} className="subject-badge">
-                  {sub.name}
-                </span>
-              ))}
-            </div>
           </div>
 
           {/* Grid Table */}
@@ -294,50 +293,81 @@ export default function TimetableManage() {
                 </tr>
               </thead>
               <tbody>
-                {DAYS.map((dayName, dayIdx) => (
-                  <tr key={dayName}>
-                    <td className="day-label">{SHORT_DAYS[dayIdx]}</td>
-                    {PERIODS.map((period) => {
-                      const entry = getSlotEntry(dayIdx, period);
-                      let isConflict = false;
-                      let facultyObj: Faculty | undefined;
-                      let subjectObj: Subject | undefined;
+                {DAYS.map((dayName, dayIdx) => {
+                  const cells: React.ReactNode[] = [];
+                  let skipNext = false;
 
-                      if (entry) {
-                        facultyObj = faculty.find((f) => f.id === entry.faculty_id);
-                        subjectObj = subjects.find((s) => s.id === entry.subject_id);
-                        isConflict = checkFacultyConflict(entry.faculty_id, dayIdx, period, currentSection.id);
+                  for (let i = 0; i < PERIODS.length; i++) {
+                    const period = PERIODS[i];
+                    if (skipNext) {
+                      skipNext = false;
+                      continue;
+                    }
+
+                    const entry = getSlotEntry(dayIdx, period);
+                    let isConflict = false;
+                    let facultyObj: Faculty | undefined;
+                    let subjectObj: Subject | undefined;
+
+                    const isCombined =
+                      entry?.session_type === "lab" && period < PERIODS[PERIODS.length - 1];
+
+                    if (entry) {
+                      facultyObj = faculty.find((f) => f.id === entry.faculty_id);
+                      subjectObj = subjects.find((s) => s.id === entry.subject_id);
+                      isConflict = checkFacultyConflict(entry.faculty_id, dayIdx, period, currentSection.id);
+                      if (isCombined) {
+                        isConflict =
+                          isConflict ||
+                          checkFacultyConflict(entry.faculty_id, dayIdx, period + 1, currentSection.id);
                       }
+                    }
 
-                      return (
-                        <td key={period} className="timetable-cell">
-                          {entry ? (
-                            <div
-                              className={`cell-card ${isConflict ? "conflict" : ""}`}
-                              onClick={() => handleOpenAssignModal(dayIdx, period, entry)}
-                            >
-                              <div className="sub-name">{subjectObj?.name || "Subject"}</div>
-                              <div className="fac-name">{facultyObj?.full_name || "Faculty"}</div>
-                              {entry.session_type === "lab" && (
-                                <div className="badge-tag combined">🔗 Combined {period}-{period + 1}</div>
-                              )}
-                              {isConflict && (
-                                <div className="badge-tag conflict-tag">⚠ Conflict</div>
-                              )}
-                            </div>
-                          ) : (
-                            <div
-                              className="cell-card-empty"
-                              onClick={() => handleOpenAssignModal(dayIdx, period)}
-                            >
-                              + Assign
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                    if (isCombined) {
+                      skipNext = true;
+                    }
+
+                    cells.push(
+                      <td
+                        key={period}
+                        colSpan={isCombined ? 2 : 1}
+                        className="timetable-cell"
+                      >
+                        {entry ? (
+                          <div
+                            className={`cell-card ${isConflict ? "conflict" : ""}`}
+                            onClick={() => handleOpenAssignModal(dayIdx, period, entry)}
+                          >
+                            <div className="sub-name">{subjectObj?.name || "Subject"}</div>
+                            <div className="fac-name">{facultyObj?.full_name || "Faculty"}</div>
+                            {isCombined ? (
+                              <div className="badge-tag combined">🔗 Combined {period}-{period + 1}</div>
+                            ) : entry.session_type === "lab" ? (
+                              <div className="badge-tag combined">🔗 Lab (Period {period})</div>
+                            ) : null}
+                            {isConflict && (
+                              <div className="badge-tag conflict-tag">⚠ Conflict</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            className="cell-card-empty"
+                            onClick={() => handleOpenAssignModal(dayIdx, period)}
+                          >
+                            + Assign
+                          </div>
+                        )}
+                      </td>
+                    );
+                  }
+
+                  return (
+                    <tr key={dayName}>
+                      <td className="day-label">{SHORT_DAYS[dayIdx]}</td>
+                      {cells}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -345,8 +375,8 @@ export default function TimetableManage() {
           {/* Footer Legend */}
           <div className="timetable-footer-legend">
             <div className="legend-item">
-              <span className="badge-tag combined" style={{ fontSize: "0.75rem", padding: "2px 8px" }}>🔗 Combined 1-2</span>
-              <span>= 2-hour lab period, single attendance session</span>
+              <span className="badge-tag combined" style={{ fontSize: "0.75rem", padding: "2px 8px" }}>🔗 Combined</span>
+              <span>= 2-hour lab period (spans 2 consecutive periods), single attendance session</span>
             </div>
             <div className="legend-item">
               <span className="badge-tag conflict-tag" style={{ fontSize: "0.75rem", padding: "2px 8px", background: "#FEE2E2", color: "#991B1B" }}>⚠ Conflict</span>
@@ -362,7 +392,9 @@ export default function TimetableManage() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: "1.1rem" }}>
-                {modalSlot.existingEntry ? "Edit Slot Allocation" : `Assign Slot — ${DAYS[modalSlot.dayIndex]}, Period ${modalSlot.period}`}
+                {modalSlot.existingEntry
+                  ? `Edit Slot Allocation (${DAYS[modalSlot.dayIndex]}, Period ${modalSlot.period})`
+                  : `Assign Slot — ${DAYS[modalSlot.dayIndex]}, Period ${modalSlot.period}`}
               </h3>
               <button
                 className="btn ghost"
@@ -401,12 +433,21 @@ export default function TimetableManage() {
                 >
                   <option value="">Select faculty…</option>
                   {faculty.map((f) => {
-                    const hasConflict = checkFacultyConflict(
-                      f.id,
-                      modalSlot.dayIndex,
-                      modalSlot.period,
-                      selectedSectionId || 0
-                    );
+                    const hasConflict =
+                      checkFacultyConflict(
+                        f.id,
+                        modalSlot.dayIndex,
+                        modalSlot.period,
+                        selectedSectionId || 0
+                      ) ||
+                      (modalForm.session_type === "lab" &&
+                        modalSlot.period < PERIODS[PERIODS.length - 1] &&
+                        checkFacultyConflict(
+                          f.id,
+                          modalSlot.dayIndex,
+                          modalSlot.period + 1,
+                          selectedSectionId || 0
+                        ));
                     return (
                       <option key={f.id} value={f.id}>
                         {f.full_name} {hasConflict ? "⚠️ (Assigned elsewhere this period)" : ""}
@@ -423,7 +464,12 @@ export default function TimetableManage() {
                   onChange={(e) => setModalForm({ ...modalForm, session_type: e.target.value })}
                 >
                   <option value="lecture">Lecture (Single Period)</option>
-                  <option value="lab">Lab (Combined Period)</option>
+                  <option
+                    value="lab"
+                    disabled={modalSlot.period >= PERIODS[PERIODS.length - 1]}
+                  >
+                    Lab (Combined Period: {modalSlot.period} &amp; {modalSlot.period + 1})
+                  </option>
                 </select>
               </div>
 

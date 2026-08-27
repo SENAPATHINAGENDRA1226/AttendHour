@@ -41,11 +41,11 @@ export default function ClassesManage() {
   const [showSubForm, setShowSubForm] = useState(false);
 
   // Subject State
-  const [subjectForm, setSubjectForm] = useState({ name: "", code: "", department_id: "" });
+  const [subjectForm, setSubjectForm] = useState({ name: "", code: "" });
   const [subjectBusy, setSubjectBusy] = useState(false);
   const [subjectError, setSubjectError] = useState("");
   const [editSubjectItem, setEditSubjectItem] = useState<Subject | null>(null);
-  const [editSubjectForm, setEditSubjectForm] = useState({ name: "", code: "", department_id: "" });
+  const [editSubjectForm, setEditSubjectForm] = useState({ name: "", code: "" });
 
   async function load() {
     setLoading(true);
@@ -196,8 +196,8 @@ export default function ClassesManage() {
     setSubjectError("");
     setSubjectBusy(true);
     try {
-      await api.post("/admin/subjects", { ...subjectForm, department_id: Number(subjectForm.department_id) });
-      setSubjectForm({ name: "", code: "", department_id: "" });
+      await api.post("/admin/subjects", subjectForm);
+      setSubjectForm({ name: "", code: "" });
       await load();
     } catch (err: any) {
       setSubjectError(err?.response?.data?.detail || err?.message || "Could not create subject.");
@@ -212,10 +212,7 @@ export default function ClassesManage() {
     setSubjectError("");
     setSubjectBusy(true);
     try {
-      await api.patch(`/admin/subjects/${editSubjectItem.id}`, {
-        ...editSubjectForm,
-        department_id: Number(editSubjectForm.department_id),
-      });
+      await api.patch(`/admin/subjects/${editSubjectItem.id}`, editSubjectForm);
       setEditSubjectItem(null);
       await load();
     } catch (err: any) {
@@ -396,22 +393,6 @@ export default function ClassesManage() {
         >
           <h3 id="edit-sub-title">Edit Subject: {editSubjectItem.name}</h3>
           <form onSubmit={saveEditSubject} className="form-grid">
-            <div>
-              <label htmlFor="edit-sub-dept">Department</label>
-              <select
-                id="edit-sub-dept"
-                value={editSubjectForm.department_id}
-                onChange={(e) => setEditSubjectForm({ ...editSubjectForm, department_id: e.target.value })}
-                required
-                disabled={subjectBusy}
-              >
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.code} — {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div>
               <label htmlFor="edit-sub-name">Subject Name</label>
               <input
@@ -708,23 +689,6 @@ export default function ClassesManage() {
         {showSubForm && (
           <form onSubmit={createSubject} className="form-grid" style={{ marginBottom: 16 }}>
             <div>
-              <label htmlFor="create-sub-dept">Department</label>
-              <select
-                id="create-sub-dept"
-                value={subjectForm.department_id}
-                onChange={(e) => setSubjectForm({ ...subjectForm, department_id: e.target.value })}
-                required
-                disabled={subjectBusy}
-              >
-                <option value="">Select department…</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.code}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label htmlFor="create-sub-name">Subject Name</label>
               <input
                 id="create-sub-name"
@@ -781,7 +745,6 @@ export default function ClassesManage() {
                           setEditSubjectForm({
                             name: s.name,
                             code: s.code,
-                            department_id: String(s.department_id),
                           });
                         }}
                         aria-label={`Edit subject ${s.name}`}

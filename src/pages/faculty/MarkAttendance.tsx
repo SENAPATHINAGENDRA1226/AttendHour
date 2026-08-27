@@ -20,10 +20,14 @@ export default function MarkAttendance() {
   const sectionName = params.get("section_name") || "";
   const subjectName = params.get("subject_name") || "";
   const date = params.get("date") || new Date().toISOString().slice(0, 10);
-  const periods = useMemo(
+  const initialPeriods = useMemo(
     () => (params.get("periods") || "").split(",").filter(Boolean).map(Number),
     [params]
   );
+
+  const ALL_PERIODS = [1, 2, 3, 4, 5, 6, 7];
+  const [selectedPeriods, setSelectedPeriods] = useState<number[]>(initialPeriods.length > 0 ? initialPeriods : []);
+  const periods = selectedPeriods;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [rows, setRows] = useState<Record<number, RowState>>({});
@@ -97,8 +101,8 @@ export default function MarkAttendance() {
   }
 
   useEffect(() => {
-    if (sectionId) load();
-  }, [sectionId, date, periods]);
+    if (sectionId && periods.length > 0) load();
+  }, [sectionId, date, selectedPeriods.join(",")]);
 
   function setStatus(studentId: number, status: MarkStatus, period?: number) {
     setIsDirty(true);
@@ -245,20 +249,29 @@ export default function MarkAttendance() {
       {saved && <div className="status-badge posted" style={{ marginBottom: 16 }}>✓ Attendance saved successfully!</div>}
       {offlineSaved && <div className="status-badge pending" style={{ marginBottom: 16 }}>📶 Saved to offline outbox. Will sync automatically when online.</div>}
 
-      {/* Class & Date selector card */}
+      {/* Period Selection */}
       <div className="card">
-        <div className="form-grid">
-          <div>
-            <label htmlFor="class-select">Class</label>
-            <select id="class-select" value={sectionId} onChange={() => {}}>
-              <option value={sectionId}>{sectionName} — {subjectName} · {periodLabel}</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="attendance-date">Date</label>
-            <input id="attendance-date" type="date" value={date} readOnly />
-          </div>
+        <label>Select Period(s)</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+          {ALL_PERIODS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`btn ${selectedPeriods.includes(p) ? "" : "secondary"}`}
+              style={{ minWidth: 48, padding: "6px 12px", fontSize: "0.85rem" }}
+              onClick={() => {
+                setSelectedPeriods((prev) =>
+                  prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)
+                );
+              }}
+            >
+              P{p}
+            </button>
+          ))}
         </div>
+        {periods.length === 0 && (
+          <p style={{ color: "var(--ink-soft)", fontSize: "0.82rem", marginTop: 8 }}>Select at least one period to continue.</p>
+        )}
       </div>
 
       {/* Class Info Header Card */}
