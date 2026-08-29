@@ -139,3 +139,43 @@ export interface AdminStatsOut {
   department_name: string;
 }
 
+export interface SubjectAttendanceStat {
+  held: number;
+  attended: number;
+  percentage: number;
+}
+
+export interface ComprehensiveAttendanceRow {
+  student_id: number;
+  s_no: number;
+  roll_no: string;
+  name: string;
+  subjects: {
+    MFAI?: SubjectAttendanceStat;
+    JAVA?: SubjectAttendanceStat;
+    "FAI&ML"?: SubjectAttendanceStat;
+    CN?: SubjectAttendanceStat;
+    UHV?: SubjectAttendanceStat;
+    "JAVA Lab"?: SubjectAttendanceStat;
+    "Python Lab"?: SubjectAttendanceStat;
+    "PowerBI Lab"?: SubjectAttendanceStat;
+    [key: string]: SubjectAttendanceStat | undefined;
+  };
+  crt: SubjectAttendanceStat;
+  es: SubjectAttendanceStat;
+  total_max: number;
+  total_obtained: number;
+  percentage: number;
+}
+
+export interface AttendanceReportMetadata {
+  college_name: string;
+  academic_year: string;
+  semester: string;
+  department: string;
+  year_section: string;
+  class_name: string;
+  report_date: string;
+}
+
+
