@@ -3,7 +3,7 @@
  * Generated for Vite SPA (React + TypeScript)
  */
 {
-  "name": "hourlogix",
+  "name": "attendhour",
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": "./dist",

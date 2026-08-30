@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "HourLogix - Department Attendance",
-        short_name: "HourLogix",
+        name: "AttendHour - Department Attendance",
+        short_name: "AttendHour",
         description: "Faculty attendance register — digital replacement for paper register.",
         theme_color: "#1b2a4a",
         background_color: "#f6f4ee",

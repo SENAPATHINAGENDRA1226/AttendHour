@@ -36,7 +36,7 @@ export default function Login() {
           <div className="login-icon">
             <span className="material-symbols-outlined" style={{ fontSize: 32 }}>badge</span>
           </div>
-          <h1>FacultySync</h1>
+          <h1>AttendHour</h1>
           <p className="tagline">Department Attendance &amp; Academic Log</p>
         </div>
 

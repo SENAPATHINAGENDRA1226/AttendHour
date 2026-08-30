@@ -22,7 +22,7 @@ export interface OutboxItem {
   conflictDetails?: string;
 }
 
-const DB_NAME = "hourlogix_offline_db";
+const DB_NAME = "attendhour_offline_db";
 const STORE_NAME = "attendance_outbox";
 const DB_VERSION = 1;
 

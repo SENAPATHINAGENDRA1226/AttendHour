@@ -76,7 +76,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </button>
 
         <div className="mobile-brand">
-          <span className="brand-name">HourLogix</span>
+          <span className="brand-name">AttendHour</span>
           <span className="brand-badge">{isFaculty ? "Faculty" : "Admin"}</span>
         </div>
 
