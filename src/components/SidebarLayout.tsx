@@ -46,7 +46,6 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { label: "Home", path: "/faculty", icon: "home" },
     { label: "Take Attendance", path: "/faculty/mark", icon: "fact_check" },
     { label: "Records", path: "/faculty/records", icon: "monitoring" },
-    { label: "Monthly Report", path: "/faculty/report", icon: "summarize" },
     { label: "Profile", path: "/faculty/profile", icon: "account_circle" },
   ];
 

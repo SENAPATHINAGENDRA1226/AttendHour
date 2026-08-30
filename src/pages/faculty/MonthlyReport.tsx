@@ -4,6 +4,7 @@ import { Section, Subject, MonthlyReportRow } from "../../types";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 import CollegeAttendanceReport from "../admin/CollegeAttendanceReport";
+import { SidebarLayout } from "../../components/SidebarLayout";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -31,7 +32,6 @@ export default function MonthlyReport() {
   
   const [loading, setLoading] = useState(false);
   const [reportError, setReportError] = useState("");
-
 
   async function fetchSections() {
     setLoadingSections(true);
@@ -90,42 +90,42 @@ export default function MonthlyReport() {
   }
 
   return (
-    <div className="container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+    <SidebarLayout>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
         <div>
           <h1 className="page-heading" style={{ margin: 0 }}>Attendance Reports</h1>
           <p className="page-subheading" style={{ margin: "4px 0 0 0" }}>
-            Official college attendance sheets, subject breakdowns, and student performance.
+            Avanthi Institute official college attendance sheets, subject breakdowns, and student performance.
           </p>
         </div>
 
         {/* Tab Toggle */}
-        <div style={{ display: "inline-flex", background: "#e2e8f0", padding: 3, borderRadius: 6 }}>
+        <div style={{ display: "inline-flex", background: "#e2e8f0", padding: 3, borderRadius: 8 }}>
           <button
             type="button"
             className="btn"
             style={{
-              padding: "6px 14px",
-              fontSize: "0.8125rem",
-              background: reportType === "college_pdf" ? "#0f172a" : "transparent",
-              color: reportType === "college_pdf" ? "#ffffff" : "#475569",
+              padding: "8px 16px",
+              fontSize: "0.84rem",
+              background: reportType === "college_pdf" ? "var(--primary)" : "transparent",
+              color: reportType === "college_pdf" ? "#ffffff" : "var(--ink-dark)",
               border: "none",
-              boxShadow: reportType === "college_pdf" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+              boxShadow: reportType === "college_pdf" ? "0 2px 4px rgba(0,0,0,0.15)" : "none",
             }}
             onClick={() => setReportType("college_pdf")}
           >
-            📋 Official College Attendance Sheet (PDF Style)
+            📋 Official College Attendance Sheet
           </button>
           <button
             type="button"
             className="btn"
             style={{
-              padding: "6px 14px",
-              fontSize: "0.8125rem",
-              background: reportType === "monthly_register" ? "#0f172a" : "transparent",
-              color: reportType === "monthly_register" ? "#ffffff" : "#475569",
+              padding: "8px 16px",
+              fontSize: "0.84rem",
+              background: reportType === "monthly_register" ? "var(--primary)" : "transparent",
+              color: reportType === "monthly_register" ? "#ffffff" : "var(--ink-dark)",
               border: "none",
-              boxShadow: reportType === "monthly_register" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+              boxShadow: reportType === "monthly_register" ? "0 2px 4px rgba(0,0,0,0.15)" : "none",
             }}
             onClick={() => setReportType("monthly_register")}
           >
@@ -142,7 +142,7 @@ export default function MonthlyReport() {
           {subjectsError && <ErrorBanner message={subjectsError} onRetry={() => fetchSubjects(sectionId)} />}
           {reportError && <ErrorBanner message={reportError} onRetry={() => loadReport()} />}
 
-          <div className="card">
+          <div className="card" style={{ marginBottom: 20 }}>
             <form onSubmit={loadReport} className="form-grid">
               <div>
                 <label>Section</label>
@@ -176,11 +176,11 @@ export default function MonthlyReport() {
             </form>
           </div>
 
-          {loading && <Spinner label="Generating monthly report…" />}
+          {loading && <Spinner label="Generating monthly report from database…" />}
 
           {!loading && rows.length > 0 && (
             <div className="card" style={{ overflowX: "auto" }}>
-              <table className="data-table">
+              <table className="data-table" style={{ width: "100%", fontSize: "0.85rem" }}>
                 <thead>
                   <tr>
                     <th>Roll No</th><th>Name</th>
@@ -191,17 +191,19 @@ export default function MonthlyReport() {
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.student_id}>
-                      <td className="mono">{r.roll_no}</td>
+                      <td className="mono" style={{ fontWeight: 700 }}>{r.roll_no}</td>
                       <td>{r.name}</td>
                       {dayKeys.map((k) => (
-                        <td key={k} className="mono" style={{ color: r.day_wise[k] === "A" ? "var(--absent)" : "var(--present)" }}>
+                        <td key={k} className="mono" style={{ color: r.day_wise[k] === "A" ? "var(--absent)" : "var(--present)", fontWeight: 600 }}>
                           {r.day_wise[k] ?? "-"}
                         </td>
                       ))}
                       <td className="mono">{r.total_held}</td>
-                      <td className="mono">{r.total_present}</td>
-                      <td className="mono">{r.total_absent}</td>
-                      <td className="mono">{r.percentage}%</td>
+                      <td className="mono" style={{ color: "#16a34a", fontWeight: 700 }}>{r.total_present}</td>
+                      <td className="mono" style={{ color: "var(--absent)" }}>{r.total_absent}</td>
+                      <td className="mono" style={{ fontWeight: 800, color: r.percentage >= 75 ? "#16a34a" : r.percentage >= 65 ? "#ca8a04" : "#dc2626" }}>
+                        {r.percentage}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -210,8 +212,8 @@ export default function MonthlyReport() {
           )}
         </>
       )}
-    </div>
+    </SidebarLayout>
   );
-
 }
+
 

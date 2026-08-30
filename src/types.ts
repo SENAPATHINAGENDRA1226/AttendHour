@@ -82,6 +82,7 @@ export interface TodayClass {
   subject_name: string;
   subject_code: string;
   periods_posted: number[];
+  scheduled_periods?: number[];
 }
 
 export interface StudentMark {
@@ -177,5 +178,48 @@ export interface AttendanceReportMetadata {
   class_name: string;
   report_date: string;
 }
+
+export interface FacultyAllocationDetail {
+  allocation_id: number;
+  section_id: number;
+  section_name: string;
+  academic_year: string;
+  department_name: string;
+  student_count: number;
+  subject_id: number;
+  subject_name: string;
+  subject_code: string;
+}
+
+export interface RecentSessionSummary {
+  id: number;
+  section_id: number;
+  subject_id: number;
+  date: string;
+  period_number: number;
+  section_name: string;
+  subject_name: string;
+  subject_code: string;
+  status: SessionStatus;
+  total_students: number;
+  present_count: number;
+  absent_count: number;
+  percentage: number;
+  updated_at?: string;
+}
+
+export interface FacultyProfileData {
+  id: number;
+  username: string;
+  full_name: string;
+  email?: string;
+  role: Role;
+  total_allocations: number;
+  total_sessions_taken: number;
+  total_students_taught: number;
+  allocations: FacultyAllocationDetail[];
+  recent_sessions: RecentSessionSummary[];
+}
+
 
 

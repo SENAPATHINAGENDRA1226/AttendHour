@@ -7,7 +7,6 @@ import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import MarkAttendance from "./pages/faculty/MarkAttendance";
 import FacultyRecords from "./pages/faculty/FacultyRecords";
 import FacultyProfile from "./pages/faculty/FacultyProfile";
-import MonthlyReport from "./pages/faculty/MonthlyReport";
 import { initOutboxSync } from "./api/outbox";
 
 function Protected({ role, children }: { role: "admin" | "faculty"; children: JSX.Element }) {
@@ -34,7 +33,7 @@ export default function App() {
       <Route path="/faculty/mark" element={<Protected role="faculty"><MarkAttendance /></Protected>} />
       <Route path="/faculty/records" element={<Protected role="faculty"><FacultyRecords /></Protected>} />
       <Route path="/faculty/profile" element={<Protected role="faculty"><FacultyProfile /></Protected>} />
-      <Route path="/faculty/report" element={<Protected role="faculty"><MonthlyReport /></Protected>} />
+      <Route path="/faculty/report" element={<Navigate to="/faculty/records" replace />} />
       
       <Route path="*" element={<Navigate to={auth ? (auth.role === "admin" ? "/admin" : "/faculty") : "/login"} replace />} />
     </Routes>

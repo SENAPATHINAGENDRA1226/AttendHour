@@ -429,32 +429,39 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
             <span className="legend-chip critical">&lt; 65% Critical</span>
           </div>
 
-          <div className="pdf-action-buttons">
-            <button
-              className="pdf-btn"
-              onClick={handleExportExcel}
-              disabled={reportRows.length === 0}
-              title="Export full report as Excel / CSV"
-            >
-              📊 Export Excel
-            </button>
-            <button
-              className="pdf-btn"
-              onClick={handlePrint}
-              disabled={reportRows.length === 0}
-              title="Export as PDF / Print preview"
-            >
-              📄 Export PDF
-            </button>
-            <button
-              className="pdf-btn primary"
-              onClick={handlePrint}
-              disabled={reportRows.length === 0}
-              title="Print Attendance Register"
-            >
-              🖨️ Print Report
-            </button>
-          </div>
+          {!isFacultyView ? (
+            <div className="pdf-action-buttons">
+              <button
+                className="pdf-btn"
+                onClick={handleExportExcel}
+                disabled={reportRows.length === 0}
+                title="Export full report as Excel / CSV"
+              >
+                📊 Export Excel
+              </button>
+              <button
+                className="pdf-btn"
+                onClick={handlePrint}
+                disabled={reportRows.length === 0}
+                title="Export as PDF / Print preview"
+              >
+                📄 Export PDF
+              </button>
+              <button
+                className="pdf-btn primary"
+                onClick={handlePrint}
+                disabled={reportRows.length === 0}
+                title="Print Attendance Register"
+              >
+                🖨️ Print Report
+              </button>
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.82rem", color: "var(--ink-soft)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--ink-muted)" }}>lock</span>
+              Official report exports &amp; printouts are restricted to Administrator access.
+            </div>
+          )}
         </div>
       </div>
 
