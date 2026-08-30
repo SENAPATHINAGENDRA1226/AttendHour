@@ -33,28 +33,50 @@ export default function AdminReports() {
   const [error, setError] = useState("");
 
 
-  async function loadOptions() {
+  async function loadSections() {
     setLoadingSections(true);
     setSectionsError("");
     try {
-      const [secRes, subRes] = await Promise.all([
-        api.get<Section[]>("/admin/sections"),
-        api.get<Subject[]>("/admin/subjects"),
-      ]);
+      const secRes = await api.get<Section[]>("/admin/sections");
       setSections(secRes.data);
-      setSubjects(subRes.data);
       if (secRes.data.length > 0) setSectionId(String(secRes.data[0].id));
-      if (subRes.data.length > 0) setSubjectId(String(subRes.data[0].id));
     } catch (err: any) {
-      setSectionsError(err?.response?.data?.detail || err?.message || "Failed to load options.");
+      setSectionsError(err?.response?.data?.detail || err?.message || "Failed to load sections.");
     } finally {
       setLoadingSections(false);
     }
   }
 
+  async function loadSubjects(secId: string) {
+    if (!secId) {
+      setSubjects([]);
+      setSubjectId("");
+      return;
+    }
+    setLoadingSubjects(true);
+    try {
+      const subRes = await api.get<Subject[]>("/admin/subjects", { params: { section_id: secId } });
+      setSubjects(subRes.data);
+      if (subRes.data.length > 0) {
+        setSubjectId(String(subRes.data[0].id));
+      } else {
+        setSubjectId("");
+      }
+    } catch {
+      setSubjects([]);
+      setSubjectId("");
+    } finally {
+      setLoadingSubjects(false);
+    }
+  }
+
   useEffect(() => {
-    loadOptions();
+    loadSections();
   }, []);
+
+  useEffect(() => {
+    loadSubjects(sectionId);
+  }, [sectionId]);
 
   async function loadReport(e?: React.FormEvent) {
     e?.preventDefault();
@@ -150,7 +172,7 @@ export default function AdminReports() {
         <CollegeAttendanceReport defaultSectionId={sectionId} />
       ) : (
         <>
-          {sectionsError && <ErrorBanner message={sectionsError} onRetry={loadOptions} />}
+          {sectionsError && <ErrorBanner message={sectionsError} onRetry={loadSections} />}
           {error && <ErrorBanner message={error} onRetry={() => loadReport()} />}
 
           <div className="card">
@@ -167,8 +189,8 @@ export default function AdminReports() {
 
               <div>
                 <label>Subject</label>
-                <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required disabled={loadingSections || loading}>
-                  <option value="">{loadingSections ? "Loading…" : "Select subject…"}</option>
+                <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} required disabled={!sectionId || loadingSubjects || loading}>
+                  <option value="">{loadingSubjects ? "Loading subjects…" : "Select subject…"}</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
                   ))}

@@ -32,6 +32,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
 
   // Report Data
   const [reportRows, setReportRows] = useState<ComprehensiveAttendanceRow[]>([]);
+  const [subjectNames, setSubjectNames] = useState<string[]>([]);
   const [loadingReport, setLoadingReport] = useState(false);
   const [reportError, setReportError] = useState("");
 
@@ -45,6 +46,14 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
     const d = new Date();
     return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
   });
+
+  // Dynamic Subject Columns based on backend data for current section
+  const subjectColumns = useMemo(() => {
+    if (subjectNames && subjectNames.length > 0) {
+      return subjectNames.map((name) => ({ key: name, label: name }));
+    }
+    return SUBJECT_COLUMNS;
+  }, [subjectNames]);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,12 +108,16 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
       const res = await api.get(endpoint, { params: { section_id: secId } });
       if (res.data) {
         setReportRows(res.data.rows || []);
+        if (res.data.subject_names && Array.isArray(res.data.subject_names)) {
+          setSubjectNames(res.data.subject_names);
+        }
         if (res.data.college_name) setCollegeName(res.data.college_name);
         if (res.data.academic_year) setAcademicYear(res.data.academic_year);
         if (res.data.semester) setSemester(res.data.semester);
         if (res.data.department) setDepartment(res.data.department);
         if (res.data.year_section) setSectionName(res.data.year_section);
         if (res.data.report_date) setReportDate(res.data.report_date);
+        setSelectedSubjectFilter("ALL");
       }
     } catch (err: any) {
       setReportError(err?.response?.data?.detail || err?.message || "Failed to fetch comprehensive attendance report.");
@@ -208,22 +221,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
       "S.NO",
       "Roll Number",
       "Name of the Student",
-      "MFAI Held",
-      "MFAI Attended",
-      "JAVA Held",
-      "JAVA Attended",
-      "FAI&ML Held",
-      "FAI&ML Attended",
-      "CN Held",
-      "CN Attended",
-      "UHV Held",
-      "UHV Attended",
-      "JAVA Lab Held",
-      "JAVA Lab Attended",
-      "Python Lab Held",
-      "Python Lab Attended",
-      "PowerBI Lab Held",
-      "PowerBI Lab Attended",
+      ...subjectColumns.flatMap((sub) => [`${sub.label} Held`, `${sub.label} Attended`]),
       "CRT Held",
       "CRT Attended",
       "ES Held",
@@ -245,22 +243,10 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
         r.s_no,
         `"${r.roll_no}"`,
         `"${r.name}"`,
-        r.subjects["MFAI"]?.held ?? 0,
-        r.subjects["MFAI"]?.attended ?? 0,
-        r.subjects["JAVA"]?.held ?? 0,
-        r.subjects["JAVA"]?.attended ?? 0,
-        r.subjects["FAI&ML"]?.held ?? 0,
-        r.subjects["FAI&ML"]?.attended ?? 0,
-        r.subjects["CN"]?.held ?? 0,
-        r.subjects["CN"]?.attended ?? 0,
-        r.subjects["UHV"]?.held ?? 0,
-        r.subjects["UHV"]?.attended ?? 0,
-        r.subjects["JAVA Lab"]?.held ?? 0,
-        r.subjects["JAVA Lab"]?.attended ?? 0,
-        r.subjects["Python Lab"]?.held ?? 0,
-        r.subjects["Python Lab"]?.attended ?? 0,
-        r.subjects["PowerBI Lab"]?.held ?? 0,
-        r.subjects["PowerBI Lab"]?.attended ?? 0,
+        ...subjectColumns.flatMap((sub) => [
+          r.subjects[sub.key]?.held ?? 0,
+          r.subjects[sub.key]?.attended ?? 0,
+        ]),
         r.crt?.held ?? 0,
         r.crt?.attended ?? 0,
         r.es?.held ?? 0,
@@ -313,37 +299,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
             </select>
           </div>
 
-          <div className="pdf-filter-group" style={{ minWidth: 140 }}>
-            <label>Semester</label>
-            <select
-              className="pdf-filter-select"
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-            >
-              <option value="I Year – I Semester">I Year – I Semester</option>
-              <option value="I Year – II Semester">I Year – II Semester</option>
-              <option value="II Year – I Semester">II Year – I Semester</option>
-              <option value="II Year – II Semester">II Year – II Semester</option>
-              <option value="III Year – I Semester">III Year – I Semester</option>
-              <option value="IV Year – I Semester">IV Year – I Semester</option>
-            </select>
-          </div>
-
-          <div className="pdf-filter-group" style={{ minWidth: 180 }}>
-            <label>Department</label>
-            <select
-              className="pdf-filter-select"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-            >
-              <option value="Department of Computer Science and Engineering (AI & ML)">CSE (AI & ML)</option>
-              <option value="Department of Computer Science and Engineering">CSE</option>
-              <option value="Department of Information Technology">Information Technology</option>
-              <option value="Department of Electronics and Communication">ECE</option>
-            </select>
-          </div>
-
-          <div className="pdf-filter-group" style={{ minWidth: 130 }}>
+          <div className="pdf-filter-group" style={{ minWidth: 150 }}>
             <label>Section</label>
             <select
               className="pdf-filter-select"
@@ -394,7 +350,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
               }}
             >
               <option value="ALL">All Subjects (Full PDF)</option>
-              {SUBJECT_COLUMNS.map((sub) => (
+              {subjectColumns.map((sub) => (
                 <option key={sub.key} value={sub.key}>
                   {sub.label}
                 </option>
@@ -516,8 +472,8 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
                       Name of the Student {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                     </th>
 
-                    {/* 8 Core Subject Groups */}
-                    {SUBJECT_COLUMNS.map((sub) => (
+                    {/* Dynamic Core Subject Groups */}
+                    {subjectColumns.map((sub) => (
                       <th
                         key={sub.key}
                         colSpan={2}
@@ -578,7 +534,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
                   {/* ROW 2: Held | Attended Subcolumns */}
                   <tr className="sub-header-row">
                     {/* Subject Subcolumns */}
-                    {SUBJECT_COLUMNS.map((sub) => (
+                    {subjectColumns.map((sub) => (
                       <React.Fragment key={sub.key}>
                         <th>Held</th>
                         <th className="group-end">Attended</th>
@@ -617,8 +573,8 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
                         {/* Sticky 3: Name */}
                         <td className="pdf-col-name">{row.name}</td>
 
-                        {/* 8 Subjects: Held | Attended */}
-                        {SUBJECT_COLUMNS.map((sub) => {
+                        {/* Dynamic Subjects: Held | Attended */}
+                        {subjectColumns.map((sub) => {
                           const stat: SubjectAttendanceStat = row.subjects[sub.key] || { held: 0, attended: 0, percentage: 0 };
                           return (
                             <React.Fragment key={sub.key}>
@@ -650,7 +606,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={26} style={{ textAlign: "center", padding: "32px 16px", color: "#64748b", fontWeight: 500 }}>
+                      <td colSpan={subjectColumns.length * 2 + 10} style={{ textAlign: "center", padding: "32px 16px", color: "#64748b", fontWeight: 500 }}>
                         {selectedSectionId
                           ? "No attendance records found for this section in the database."
                           : "Please select a section above to view the attendance report."}
@@ -840,7 +796,7 @@ export default function CollegeAttendanceReport({ defaultSectionId, isFacultyVie
                   </tr>
                 </thead>
                 <tbody>
-                  {SUBJECT_COLUMNS.map((sub) => {
+                  {subjectColumns.map((sub) => {
                     const stat = selectedStudent.subjects[sub.key] || { held: 0, attended: 0, percentage: 0 };
                     const cls = getPercentageClass(stat.percentage);
                     return (
