@@ -31,6 +31,11 @@ export default function MarkAttendance() {
   );
   const periods = selectedPeriods;
 
+  const isNonAttendanceSubject = useMemo(() => {
+    const s = subjectName.trim().toUpperCase();
+    return s.includes("LIBRARY") || s.includes("SPORTS") || s.includes("SPORT") || s === "LIB" || s === "SPT";
+  }, [subjectName]);
+
   const [students, setStudents] = useState<Student[]>([]);
   const [rows, setRows] = useState<Record<number, RowState>>({});
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>("held");
@@ -298,6 +303,14 @@ export default function MarkAttendance() {
 
       {loadError && <ErrorBanner message={loadError} onRetry={load} />}
       {saveError && <ErrorBanner message={saveError} onDismiss={() => setSaveError("")} />}
+      {isNonAttendanceSubject && (
+        <div style={{ background: "#fef3c7", border: "1px solid #f59e0b", color: "#92400e", padding: "12px 16px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#d97706" }}>info</span>
+          <div>
+            <strong>Non-Attendance Subject:</strong> Attendance records are completely disabled for Library and Sports sessions and are not counted towards attendance rates.
+          </div>
+        </div>
+      )}
       {savedTime && (
         <div className="status-badge posted" style={{ marginBottom: 16, padding: "8px 16px", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: 8 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>cloud_done</span>
@@ -569,7 +582,7 @@ export default function MarkAttendance() {
         <button
           className="btn large"
           onClick={handleSave}
-          disabled={saving || periods.length === 0}
+          disabled={saving || periods.length === 0 || isNonAttendanceSubject}
           style={{ minWidth: 260, fontSize: "1.05rem", padding: "14px 28px", boxShadow: "0 4px 14px rgba(107, 70, 193, 0.3)" }}
         >
           {saving ? (

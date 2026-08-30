@@ -192,23 +192,7 @@ export default function FacultyProfile() {
                       </div>
                     </div>
 
-                    <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed var(--surface-variant)", display: "flex", justifyContent: "flex-end" }}>
-                      <button
-                        className="btn secondary"
-                        style={{ padding: "4px 10px", fontSize: "0.8rem" }}
-                        onClick={() => {
-                          const p = new URLSearchParams({
-                            section_id: String(alloc.section_id),
-                            section_name: alloc.section_name,
-                            subject_id: String(alloc.subject_id),
-                            subject_name: alloc.subject_name,
-                          });
-                          navigate(`/faculty/mark?${p.toString()}`);
-                        }}
-                      >
-                        Take Attendance →
-                      </button>
-                    </div>
+
                   </div>
                 ))}
               </div>

@@ -76,9 +76,9 @@ describe("MarkAttendance Component — Same vs Split Mode State Logic", () => {
     // 5. Verify Period 2 is now absent
     expect(absentButtons[1]).toHaveClass("active");
 
-    // 6. Click "Save Attendance" and verify payload per-period overrides
+    // 6. Click "Submit Attendance" and verify payload per-period overrides
     (api.post as any).mockResolvedValueOnce({ data: { status: "saved" } });
-    const saveBtn = screen.getByRole("button", { name: /save attendance/i });
+    const saveBtn = screen.getByRole("button", { name: /submit attendance/i });
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
