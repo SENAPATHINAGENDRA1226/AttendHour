@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.workers.nagendrasenapathi5786.attendhour.twa",
+      "sha256_cert_fingerprints": [
+        "02:F1:D1:72:AE:DA:12:3A:04:20:EC:1E:A2:0F:57:A1:9B:EF:07:E0:D7:CF:5F:EA:75:D3:11:24:29:1F:18:56"
+      ]
+    }
+  }
+]
