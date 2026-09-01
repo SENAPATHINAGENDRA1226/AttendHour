@@ -25,7 +25,10 @@ export default function MarkAttendance() {
     [params]
   );
 
-  const ALL_PERIODS = [1, 2, 3, 4, 5, 6, 7];
+  const [availablePeriods, setAvailablePeriods] = useState<number[]>(
+    initialPeriods.length > 0 ? initialPeriods : [1, 2, 3, 4, 5, 6, 7]
+  );
+  const [postedPeriods, setPostedPeriods] = useState<number[]>([]);
   const [selectedPeriods, setSelectedPeriods] = useState<number[]>(
     initialPeriods.length > 0 ? initialPeriods : [1]
   );
@@ -81,6 +84,35 @@ export default function MarkAttendance() {
       );
       if (conflict) setConflictItem(conflict);
 
+      // 1. Fetch scheduled periods from backend timetable
+      if (sectionId && subjectId) {
+        try {
+          const schedRes = await api.get<{ scheduled_periods: number[]; periods_posted: number[] }>(
+            "/faculty/scheduled-periods",
+            { params: { section_id: sectionId, subject_id: subjectId, date } }
+          );
+          const sched = schedRes.data?.scheduled_periods || [];
+          const posted = schedRes.data?.periods_posted || [];
+          setPostedPeriods(posted);
+
+          if (sched.length > 0) {
+            setAvailablePeriods(sched);
+            setSelectedPeriods((prev) => {
+              const valid = prev.filter((p) => sched.includes(p));
+              return valid.length > 0 ? valid : [...sched];
+            });
+          } else if (initialPeriods.length > 0) {
+            setAvailablePeriods(initialPeriods);
+          }
+        } catch {
+          // Fallback to initialPeriods if backend timetable endpoint is unavailable
+          if (initialPeriods.length > 0) {
+            setAvailablePeriods(initialPeriods);
+          }
+        }
+      }
+
+      // 2. Fetch student roster for section
       const res = await api.get<Student[]>(`/faculty/sections/${sectionId}/students`);
       setStudents(res.data);
       const initial: Record<number, RowState> = {};
@@ -111,8 +143,8 @@ export default function MarkAttendance() {
   }
 
   useEffect(() => {
-    if (sectionId && periods.length > 0) load();
-  }, [sectionId, date, selectedPeriods.join(",")]);
+    if (sectionId) load();
+  }, [sectionId, subjectId, date]);
 
   function setStatus(studentId: number, status: MarkStatus, period?: number) {
     setIsDirty(true);
@@ -353,21 +385,43 @@ export default function MarkAttendance() {
 
       {/* Period Selection Card */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <label style={{ fontWeight: 700, marginBottom: 8, display: "block" }}>Select Teaching Period(s):</label>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+          <label style={{ fontWeight: 700, margin: 0, display: "block" }}>Select Teaching Period(s):</label>
+          {availablePeriods.length > 1 && (
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                type="button"
+                className="btn secondary"
+                style={{ padding: "3px 10px", fontSize: "0.78rem", cursor: "pointer" }}
+                onClick={() => {
+                  setSelectedPeriods([...availablePeriods]);
+                  setIsDirty(true);
+                }}
+              >
+                Select All
+              </button>
+            </div>
+          )}
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {ALL_PERIODS.map((p) => {
+          {availablePeriods.map((p) => {
             const isSel = selectedPeriods.includes(p);
+            const isPosted = postedPeriods.includes(p);
             return (
               <button
                 key={p}
                 type="button"
                 className={`btn ${isSel ? "" : "secondary"}`}
                 style={{
-                  minWidth: 54,
-                  padding: "8px 14px",
+                  minWidth: 84,
+                  padding: "8px 16px",
                   fontSize: "0.9rem",
                   fontWeight: 700,
                   borderColor: isSel ? "var(--primary)" : "var(--surface-variant)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
                 }}
                 onClick={() => {
                   setSelectedPeriods((prev) =>
@@ -376,7 +430,12 @@ export default function MarkAttendance() {
                   setIsDirty(true);
                 }}
               >
-                Period {p}
+                <span>Period {p}</span>
+                {isPosted && (
+                  <span style={{ fontSize: "0.75rem", opacity: 0.85, fontWeight: 600 }}>
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}

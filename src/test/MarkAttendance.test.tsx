@@ -97,4 +97,68 @@ describe("MarkAttendance Component — Same vs Split Mode State Logic", () => {
       );
     });
   });
+
+  it("fetches from backend and displays only scheduled periods (e.g., Period 3 and Period 5)", async () => {
+    const mockStudents = [
+      { id: 101, roll_no: "23CS01", name: "Alice Smith", order_no: 1 },
+    ];
+
+    (api.get as any).mockImplementation((url: string) => {
+      if (url.includes("/scheduled-periods")) {
+        return Promise.resolve({
+          data: {
+            scheduled_periods: [3, 5],
+            periods_posted: [],
+          },
+        });
+      }
+      if (url.includes("/students")) {
+        return Promise.resolve({ data: mockStudents });
+      }
+      if (url.includes("/session")) {
+        return Promise.resolve({ data: null });
+      }
+      return Promise.reject(new Error("Not found"));
+    });
+
+    const route = "/faculty/mark?section_id=1&section_name=3rd+CSM-B&subject_id=2&subject_name=Deep+Learning&date=2026-08-31";
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={[route]}>
+          <MarkAttendance />
+        </MemoryRouter>
+      </AuthProvider>
+    );
+
+    // Wait for roster and scheduled periods
+    await waitFor(() => {
+      expect(screen.getByText("Period 3")).toBeInTheDocument();
+      expect(screen.getByText("Period 5")).toBeInTheDocument();
+    });
+
+    // Should NOT show Period 1, 2, 4, 6, 7
+    expect(screen.queryByText("Period 1")).not.toBeInTheDocument();
+    expect(screen.queryByText("Period 2")).not.toBeInTheDocument();
+    expect(screen.queryByText("Period 4")).not.toBeInTheDocument();
+    expect(screen.queryByText("Period 6")).not.toBeInTheDocument();
+    expect(screen.queryByText("Period 7")).not.toBeInTheDocument();
+
+    // Verify posting both periods simultaneously
+    (api.post as any).mockResolvedValueOnce({ data: { status: "saved" } });
+    const saveBtn = screen.getByRole("button", { name: /submit attendance/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        "/faculty/attendance/post",
+        expect.objectContaining({
+          section_id: 1,
+          subject_id: 2,
+          date: "2026-08-31",
+          period_numbers: [3, 5],
+        })
+      );
+    });
+  });
 });
