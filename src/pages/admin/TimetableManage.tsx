@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../../api/client";
-import { Faculty, Section, Subject, TimetableEntry, Student } from "../../types";
+import { Faculty, Section, Subject, TimetableEntry, Student, FacultyAllocation } from "../../types";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 
@@ -13,6 +13,7 @@ export default function TimetableManage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [allocations, setAllocations] = useState<FacultyAllocation[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
@@ -37,16 +38,18 @@ export default function TimetableManage() {
     setLoading(true);
     setLoadError("");
     try {
-      const [f, s, sub, t] = await Promise.all([
+      const [f, s, sub, t, a] = await Promise.all([
         api.get<Faculty[]>("/admin/faculty"),
         api.get<Section[]>("/admin/sections"),
         api.get<Subject[]>("/admin/subjects"),
         api.get<TimetableEntry[]>("/admin/timetable"),
+        api.get<FacultyAllocation[]>("/admin/allocations"),
       ]);
       setFaculty(f.data);
       setSections(s.data);
       setSubjects(sub.data);
       setEntries(t.data);
+      setAllocations(a.data);
 
       if (s.data.length > 0 && selectedSectionId === null) {
         setSelectedSectionId(s.data[0].id);
@@ -69,6 +72,29 @@ export default function TimetableManage() {
 
   // Filter timetable entries for current section
   const sectionEntries = entries.filter((e) => e.section_id === selectedSectionId);
+
+  // Find the faculty allocated to teach a given subject for the current section (or globally)
+  function getSubjectAllocatedFacultyId(subjectId: number | string, sectionId?: number | null): string {
+    if (!subjectId) return "";
+    const subIdNum = Number(subjectId);
+    const secId = sectionId || selectedSectionId;
+
+    // 1. Exact match for this section and subject
+    if (secId) {
+      const secAlloc = allocations.find(
+        (a) => a.section_id === secId && a.subject_id === subIdNum && a.is_active
+      );
+      if (secAlloc) return String(secAlloc.faculty_id);
+    }
+
+    // 2. Fallback: match any allocation for this subject
+    const anyAlloc = allocations.find(
+      (a) => a.subject_id === subIdNum && a.is_active
+    );
+    if (anyAlloc) return String(anyAlloc.faculty_id);
+
+    return "";
+  }
 
   // Check if a faculty is assigned elsewhere during the same day and period
   function checkFacultyConflict(facultyId: number, dayIndex: number, period: number, excludeSectionId: number) {
@@ -95,8 +121,8 @@ export default function TimetableManage() {
       });
     } else {
       setModalForm({
-        faculty_id: faculty.length > 0 ? String(faculty[0].id) : "",
-        subject_id: sectionSubjects.length > 0 ? String(sectionSubjects[0].id) : "",
+        faculty_id: "",
+        subject_id: "",
         session_type: "lecture",
       });
     }
@@ -412,16 +438,39 @@ export default function TimetableManage() {
                 <label>Subject</label>
                 <select
                   value={modalForm.subject_id}
-                  onChange={(e) => setModalForm({ ...modalForm, subject_id: e.target.value })}
+                  onChange={(e) => {
+                    const newSubId = e.target.value;
+                    const autoFacId = getSubjectAllocatedFacultyId(newSubId);
+                    setModalForm((prev) => ({
+                      ...prev,
+                      subject_id: newSubId,
+                      faculty_id: autoFacId || prev.faculty_id,
+                    }));
+                  }}
                   required
                 >
                   <option value="">Select subject…</option>
-                  {subjects.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name} ({sub.code})
-                    </option>
-                  ))}
+                  {subjects.map((sub) => {
+                    const allocFacId = getSubjectAllocatedFacultyId(sub.id);
+                    const allocFac = allocFacId ? faculty.find((f) => f.id === Number(allocFacId)) : null;
+                    return (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name} ({sub.code}){allocFac ? ` — 👤 ${allocFac.full_name}` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {modalForm.subject_id && (() => {
+                  const allocFacId = getSubjectAllocatedFacultyId(modalForm.subject_id);
+                  const allocFac = allocFacId ? faculty.find((f) => f.id === Number(allocFacId)) : null;
+                  if (!allocFac) return null;
+                  return (
+                    <div style={{ marginTop: 6, fontSize: "0.82rem", color: "var(--primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>how_to_reg</span>
+                      Allocated Faculty: <strong>{allocFac.full_name}</strong> (Auto-selected)
+                    </div>
+                  );
+                })()}
               </div>
 
               <div style={{ marginBottom: 14 }}>
@@ -433,6 +482,7 @@ export default function TimetableManage() {
                 >
                   <option value="">Select faculty…</option>
                   {faculty.map((f) => {
+                    const isAllocated = String(f.id) === getSubjectAllocatedFacultyId(modalForm.subject_id);
                     const hasConflict =
                       checkFacultyConflict(
                         f.id,
@@ -450,7 +500,7 @@ export default function TimetableManage() {
                         ));
                     return (
                       <option key={f.id} value={f.id}>
-                        {f.full_name} {hasConflict ? "⚠️ (Assigned elsewhere this period)" : ""}
+                        {f.full_name} {isAllocated ? "⭐ (Allocated Faculty)" : ""} {hasConflict ? "⚠️ (Assigned elsewhere this period)" : ""}
                       </option>
                     );
                   })}
