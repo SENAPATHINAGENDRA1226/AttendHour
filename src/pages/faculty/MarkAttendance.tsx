@@ -74,65 +74,74 @@ export default function MarkAttendance() {
     setConflictItem(null);
     setSavedTime(null);
     try {
-      const outboxItems = await getOutboxItems();
-      const conflict = outboxItems.find(
-        (item) =>
-          item.status === "conflict" &&
-          item.payload.section_id === sectionId &&
-          item.payload.date === date &&
-          item.payload.period_numbers.some((p) => periods.includes(p))
-      );
-      if (conflict) setConflictItem(conflict);
+      const targetPeriod = periods.length > 0 ? periods[0] : (initialPeriods.length > 0 ? initialPeriods[0] : 1);
 
-      // 1. Fetch scheduled periods from backend timetable
-      if (sectionId && subjectId) {
-        try {
-          const schedRes = await api.get<{ scheduled_periods: number[]; periods_posted: number[] }>(
-            "/faculty/scheduled-periods",
-            { params: { section_id: sectionId, subject_id: subjectId, date } }
-          );
-          const sched = schedRes.data?.scheduled_periods || [];
-          const posted = schedRes.data?.periods_posted || [];
-          setPostedPeriods(posted);
+      // Execute all load tasks in parallel over the network for fast mobile response
+      const [outboxItems, schedRes, rosterRes, existingSessionRes] = await Promise.all([
+        getOutboxItems().catch(() => []),
+        sectionId && subjectId
+          ? api.get<{ scheduled_periods: number[]; periods_posted: number[] }>(
+              "/faculty/scheduled-periods",
+              { params: { section_id: sectionId, subject_id: subjectId, date } }
+            ).catch(() => null)
+          : Promise.resolve(null),
+        api.get<Student[]>(`/faculty/sections/${sectionId}/students`),
+        targetPeriod
+          ? api.get("/faculty/attendance/session", {
+              params: { section_id: sectionId, date, period_number: targetPeriod },
+            }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
 
-          if (sched.length > 0) {
-            setAvailablePeriods(sched);
-            setSelectedPeriods((prev) => {
-              const valid = prev.filter((p) => sched.includes(p));
-              return valid.length > 0 ? valid : [...sched];
-            });
-          } else if (initialPeriods.length > 0) {
-            setAvailablePeriods(initialPeriods);
-          }
-        } catch {
-          // Fallback to initialPeriods if backend timetable endpoint is unavailable
-          if (initialPeriods.length > 0) {
-            setAvailablePeriods(initialPeriods);
-          }
-        }
+      if (outboxItems && outboxItems.length > 0) {
+        const conflict = outboxItems.find(
+          (item) =>
+            item.status === "conflict" &&
+            item.payload.section_id === sectionId &&
+            item.payload.date === date &&
+            item.payload.period_numbers.some((p) => periods.includes(p))
+        );
+        if (conflict) setConflictItem(conflict);
       }
 
-      // 2. Fetch student roster for section
-      const res = await api.get<Student[]>(`/faculty/sections/${sectionId}/students`);
-      setStudents(res.data);
-      const initial: Record<number, RowState> = {};
-      res.data.forEach((s) => { initial[s.id] = { mode: "same", status: "present" }; });
+      // Handle scheduled periods
+      if (schedRes?.data) {
+        const sched = schedRes.data.scheduled_periods || [];
+        const posted = schedRes.data.periods_posted || [];
+        setPostedPeriods(posted);
 
-      if (periods.length > 0) {
-        try {
-          const existing = await api.get("/faculty/attendance/session", {
-            params: { section_id: sectionId, date, period_number: periods[0] },
+        if (sched.length > 0) {
+          setAvailablePeriods(sched);
+          setSelectedPeriods((prev) => {
+            const valid = prev.filter((p) => sched.includes(p));
+            return valid.length > 0 ? valid : [...sched];
           });
-          if (existing.data) {
-            setSessionStatus(existing.data.status);
-            setRemarks(existing.data.remarks || "");
-            existing.data.records.forEach((r: any) => {
-              initial[r.student_id] = { mode: "same", status: r.status };
-            });
-            setSavedTime("Loaded from database");
-          }
-        } catch { /* fine */ }
+        } else if (initialPeriods.length > 0) {
+          setAvailablePeriods(initialPeriods);
+        }
+      } else if (initialPeriods.length > 0) {
+        setAvailablePeriods(initialPeriods);
       }
+
+      // Handle roster & existing attendance session
+      const studentData = rosterRes.data || [];
+      setStudents(studentData);
+
+      const initial: Record<number, RowState> = {};
+      studentData.forEach((s) => { initial[s.id] = { mode: "same", status: "present" }; });
+
+      if (existingSessionRes?.data) {
+        const existingData = existingSessionRes.data;
+        setSessionStatus(existingData.status);
+        setRemarks(existingData.remarks || "");
+        if (existingData.records) {
+          existingData.records.forEach((r: any) => {
+            initial[r.student_id] = { mode: "same", status: r.status };
+          });
+        }
+        setSavedTime("Loaded from database");
+      }
+
       setRows(initial);
       setIsDirty(false);
     } catch (err: any) {
