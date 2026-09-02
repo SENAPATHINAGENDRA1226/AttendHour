@@ -78,8 +78,8 @@ export default function FacultyDashboard() {
     const defaultPeriods = cls.scheduled_periods && cls.scheduled_periods.length > 0
       ? cls.scheduled_periods.join(",")
       : cls.periods_posted && cls.periods_posted.length > 0
-      ? cls.periods_posted.join(",")
-      : "1";
+        ? cls.periods_posted.join(",")
+        : "1";
 
     const params = new URLSearchParams({
       section_id: String(cls.section_id),
@@ -294,83 +294,7 @@ export default function FacultyDashboard() {
         </div>
       )}
 
-      {/* Recent Attendance Activity */}
-      {recentSessions.length > 0 && (
-        <div className="card" style={{ marginTop: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--primary)" }}>history</span>
-              Recent Attendance History
-            </h3>
-            <button
-              className="btn secondary"
-              style={{ padding: "4px 10px", fontSize: "0.8rem" }}
-              onClick={() => navigate("/faculty/profile")}
-            >
-              View Full History →
-            </button>
-          </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table className="data-table" style={{ width: "100%", fontSize: "0.86rem" }}>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Period</th>
-                  <th>Section</th>
-                  <th>Subject</th>
-                  <th>Attendance</th>
-                  <th>Rate</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentSessions.map((s) => (
-                  <tr key={s.id}>
-                    <td style={{ fontWeight: 600 }}>{s.date}</td>
-                    <td><span className="period-pill" style={{ margin: 0 }}>P{s.period_number}</span></td>
-                    <td>{s.section_name}</td>
-                    <td>{s.subject_name}</td>
-                    <td>
-                      {s.status === "held" ? (
-                        <span><strong style={{ color: "#16a34a" }}>{s.present_count}</strong> / {s.total_students} Present</span>
-                      ) : (
-                        <span className="status-badge pending">{s.status}</span>
-                      )}
-                    </td>
-                    <td>
-                      {s.status === "held" ? (
-                        <span style={{ fontWeight: 700, color: s.percentage >= 75 ? "#16a34a" : s.percentage >= 65 ? "#ca8a04" : "#dc2626" }}>
-                          {s.percentage}%
-                        </span>
-                      ) : "—"}
-                    </td>
-                    <td>
-                      <button
-                        className="btn secondary"
-                        style={{ padding: "3px 8px", fontSize: "0.76rem" }}
-                        onClick={() => {
-                          const p = new URLSearchParams({
-                            section_id: String(s.section_id),
-                            section_name: s.section_name,
-                            subject_id: String(s.subject_id),
-                            subject_name: s.subject_name,
-                            date: s.date,
-                            periods: String(s.period_number),
-                          });
-                          navigate(`/faculty/mark?${p.toString()}`);
-                        }}
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </SidebarLayout>
   );
 }
