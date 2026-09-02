@@ -6,8 +6,17 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles.css";
 
-// Automatically update service worker in background on mobile/PWA
-registerSW({ immediate: true });
+// Register service worker — defer update to avoid flash/reload when app opens
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // Silently update on next navigation instead of reloading immediately
+    updateSW(true);
+  },
+  onOfflineReady() {
+    // App is cached and ready for offline use
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
