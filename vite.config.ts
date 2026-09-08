@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["favicon.svg"],
+        includeAssets: ["icons/Attend Final logo.png"],
         manifest: {
           name: "AttendHour - Department Attendance",
           short_name: "AttendHour",
@@ -22,8 +22,7 @@ export default defineConfig(({ mode }) => {
           display: "standalone",
           start_url: "/",
           icons: [
-            { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-            { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
+            { src: "/icons/Attend Final logo.png", sizes: "192x192 512x512", type: "image/png" }
           ]
         },
         workbox: {

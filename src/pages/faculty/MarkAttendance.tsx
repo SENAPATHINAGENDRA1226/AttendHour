@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { MarkStatus, SessionStatus, Student } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 import { SidebarLayout } from "../../components/SidebarLayout";
@@ -12,6 +13,7 @@ type RowState =
   | { mode: "split"; perPeriod: Record<number, MarkStatus> };
 
 export default function MarkAttendance() {
+  const { auth, operator } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -19,11 +21,17 @@ export default function MarkAttendance() {
   const subjectId = Number(params.get("subject_id"));
   const sectionName = params.get("section_name") || "";
   const subjectName = params.get("subject_name") || "";
+  const ownerName = params.get("owner_name") || "";
+  const ownerId = params.get("owner_id") ? Number(params.get("owner_id")) : null;
   const date = params.get("date") || new Date().toISOString().slice(0, 10);
   const initialPeriods = useMemo(
     () => (params.get("periods") || "").split(",").filter(Boolean).map(Number),
     [params]
   );
+
+  const currentOperatorName = operator?.name || auth?.fullName || "Operator";
+  const currentOperatorId = operator?.id;
+  const isSubstitution = Boolean(ownerName && (ownerId ? ownerId !== currentOperatorId : ownerName !== currentOperatorName));
 
   const [availablePeriods, setAvailablePeriods] = useState<number[]>(
     initialPeriods.length > 0 ? initialPeriods : [1, 2, 3, 4, 5, 6, 7]
@@ -349,6 +357,29 @@ export default function MarkAttendance() {
           <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#d97706" }}>info</span>
           <div>
             <strong>Non-Attendance Subject:</strong> Attendance records are completely disabled for Library and Sports sessions and are not counted towards attendance rates.
+          </div>
+        </div>
+      )}
+      {isSubstitution && (
+        <div
+          style={{
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            color: "#1e40af",
+            padding: "12px 16px",
+            borderRadius: 8,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#2563eb" }}>
+            swap_horiz
+          </span>
+          <div style={{ fontSize: "0.95rem", lineHeight: 1.4 }}>
+            Posting for <strong>{ownerName}</strong>'s class — you are logged in as <strong>{currentOperatorName}</strong>.
           </div>
         </div>
       )}

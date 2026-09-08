@@ -1,4 +1,4 @@
-export type Role = "admin" | "faculty";
+export type Role = "admin" | "faculty" | "shared_faculty";
 export type SessionStatus = "held" | "holiday" | "faculty_leave";
 export type MarkStatus = "present" | "absent";
 export type SessionType = "lecture" | "lab";
@@ -102,11 +102,46 @@ export interface AttendanceSessionOut {
   section_id: number;
   subject_id: number;
   subject_name: string;
+  faculty_id?: number;
+  faculty_name?: string;
+  operator_faculty_id?: number;
+  operator_faculty_name?: string;
   date: string;
   period_number: number;
   status: SessionStatus;
   remarks?: string;
   records: AttendanceRecordOut[];
+}
+
+export interface ScheduledClassForCoverOut {
+  timetable_entry_id: number;
+  section_id: number;
+  section_name: string;
+  year: number;
+  department_name: string;
+  subject_id: number;
+  subject_name: string;
+  subject_code: string;
+  period_number: number;
+  faculty_id: number;
+  faculty_name: string;
+  faculty_username: string;
+  is_posted: boolean;
+  session_status?: string | null;
+}
+
+export interface AllocationDirectoryOut {
+  allocation_id: number;
+  section_id: number;
+  section_name: string;
+  year: number;
+  department_name: string;
+  subject_id: number;
+  subject_name: string;
+  subject_code: string;
+  faculty_id: number;
+  faculty_name: string;
+  faculty_username: string;
 }
 
 export interface MonthlyReportRow {

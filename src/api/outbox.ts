@@ -12,6 +12,7 @@ export interface OutboxPayload {
   per_period_overrides: Record<number, { student_id: number; status: MarkStatus }[]>;
   section_name?: string;
   subject_name?: string;
+  operator_faculty_id?: number;
 }
 
 export interface OutboxItem {
@@ -55,6 +56,14 @@ function notifyOutboxChanged() {
 export async function saveToOutbox(payload: OutboxPayload): Promise<OutboxItem> {
   const db = await openDB();
   const id = `outbox_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  if (!payload.operator_faculty_id && typeof localStorage !== "undefined") {
+    const savedOpId = localStorage.getItem("operator_faculty_id");
+    if (savedOpId) {
+      payload.operator_faculty_id = Number(savedOpId);
+    }
+  }
+
   const item: OutboxItem = {
     id,
     timestamp: Date.now(),
@@ -226,16 +235,25 @@ export async function syncOutbox(): Promise<{ synced: number; conflicts: number;
 
       // Replay request
       try {
-        await api.post("/faculty/attendance/post", {
-          section_id: item.payload.section_id,
-          subject_id: item.payload.subject_id,
-          date: item.payload.date,
-          period_numbers: item.payload.period_numbers,
-          status: item.payload.status,
-          marks: item.payload.marks || [],
-          remarks: item.payload.remarks || null,
-          per_period_overrides: item.payload.per_period_overrides || {},
-        });
+        const replayHeaders: Record<string, string> = {};
+        if (item.payload.operator_faculty_id) {
+          replayHeaders["X-Operator-Faculty-Id"] = String(item.payload.operator_faculty_id);
+        }
+
+        await api.post(
+          "/faculty/attendance/post",
+          {
+            section_id: item.payload.section_id,
+            subject_id: item.payload.subject_id,
+            date: item.payload.date,
+            period_numbers: item.payload.period_numbers,
+            status: item.payload.status,
+            marks: item.payload.marks || [],
+            remarks: item.payload.remarks || null,
+            per_period_overrides: item.payload.per_period_overrides || {},
+          },
+          { headers: replayHeaders }
+        );
 
         await removeOutboxItem(item.id);
         synced++;

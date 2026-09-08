@@ -16,6 +16,11 @@ api.interceptors.request.use((config) => {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${auth.token}`;
   }
+  const operatorId = localStorage.getItem("operator_faculty_id");
+  if (operatorId) {
+    config.headers = config.headers ?? {};
+    config.headers["X-Operator-Faculty-Id"] = operatorId;
+  }
   return config;
 });
 

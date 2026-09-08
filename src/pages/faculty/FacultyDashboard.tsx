@@ -35,7 +35,7 @@ function formatDateFriendly(dateStr: string) {
 }
 
 export default function FacultyDashboard() {
-  const { auth } = useAuth();
+  const { auth, operator } = useAuth();
   const [date, setDate] = useState(todayISO());
   const [classes, setClasses] = useState<TodayClass[]>([]);
   const [recentSessions, setRecentSessions] = useState<RecentSessionSummary[]>([]);
@@ -43,7 +43,8 @@ export default function FacultyDashboard() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const firstName = auth?.fullName ? auth.fullName.split(" ")[0] : auth?.username || "Faculty";
+  const displayName = operator?.name || auth?.fullName || auth?.username || "Faculty";
+  const firstName = displayName.split(" ")[0];
 
   async function load() {
     setLoading(true);
@@ -72,7 +73,7 @@ export default function FacultyDashboard() {
 
   useEffect(() => {
     load();
-  }, [date]);
+  }, [date, operator?.id]);
 
   function goMark(cls: TodayClass) {
     const defaultPeriods = cls.scheduled_periods && cls.scheduled_periods.length > 0
@@ -98,6 +99,40 @@ export default function FacultyDashboard() {
 
   return (
     <SidebarLayout>
+      {/* Operator Status Banner */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "8px 14px",
+          background: "var(--color-surface-raised, #f8fafc)",
+          border: "1px solid var(--color-border, #e2e8f0)",
+          borderRadius: 8,
+          marginBottom: 16,
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.88rem" }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--color-primary, #3b82f6)" }}>
+            badge
+          </span>
+          <span>
+            Operating as: <strong>{operator ? operator.name : auth?.fullName}</strong>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            className="btn small secondary"
+            onClick={() => navigate("/faculty/select")}
+            style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+          >
+            Switch Operator
+          </button>
+        </div>
+      </div>
+
       {/* Header Bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
@@ -107,15 +142,18 @@ export default function FacultyDashboard() {
           </p>
         </div>
 
-        <button
-          className="btn secondary"
-          onClick={load}
-          disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: "0.85rem" }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>sync</span>
-          Refresh Schedule
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+
+          <button
+            className="btn secondary"
+            onClick={load}
+            disabled={loading}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: "0.85rem" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>sync</span>
+            Refresh Schedule
+          </button>
+        </div>
       </div>
 
       {error && <ErrorBanner message={error} onRetry={load} />}

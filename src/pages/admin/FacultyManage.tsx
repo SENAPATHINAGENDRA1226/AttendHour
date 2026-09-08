@@ -99,7 +99,9 @@ export default function FacultyManage() {
     setFormError("");
     setFormBusy(true);
     try {
-      await api.post("/admin/faculty", form);
+      const payload: Record<string, string> = { username: form.username, full_name: form.full_name, email: form.email };
+      if (form.password.trim()) payload.password = form.password;
+      await api.post("/admin/faculty", payload);
       setForm({ username: "", full_name: "", email: "", password: "" });
       await load();
     } catch (err: any) {
@@ -359,13 +361,13 @@ export default function FacultyManage() {
                 />
               </div>
               <div>
-                <label htmlFor="create-fac-password">Temporary Password</label>
+                <label htmlFor="create-fac-password">Password <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional — defaults to faculty@123)</span></label>
                 <input
                   id="create-fac-password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  required
                   disabled={formBusy}
+                  placeholder="Leave blank for default password"
                 />
               </div>
             </div>

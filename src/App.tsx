@@ -7,6 +7,8 @@ import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import MarkAttendance from "./pages/faculty/MarkAttendance";
 import FacultyRecords from "./pages/faculty/FacultyRecords";
 import FacultyProfile from "./pages/faculty/FacultyProfile";
+import FacultySelect from "./pages/faculty/FacultySelect";
+import CoverForColleague from "./pages/faculty/CoverForColleague";
 import { initOutboxSync } from "./api/outbox";
 
 function Protected({ role, children }: { role: "admin" | "faculty"; children: JSX.Element }) {
@@ -25,16 +27,18 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={auth ? <Navigate to={auth.role === "admin" ? "/admin" : "/faculty"} /> : <Login />} />
+      <Route path="/login" element={auth ? <Navigate to={auth.role === "admin" ? "/admin" : (auth.role === "shared_faculty" ? "/faculty/select" : "/faculty")} /> : <Login />} />
       <Route path="/admin" element={<Protected role="admin"><AdminDashboard /></Protected>} />
       <Route path="/admin/*" element={<Protected role="admin"><AdminDashboard /></Protected>} />
-      
+
       <Route path="/faculty" element={<Protected role="faculty"><FacultyDashboard /></Protected>} />
+      <Route path="/faculty/select" element={<Protected role="faculty"><FacultySelect /></Protected>} />
+      <Route path="/faculty/cover" element={<Protected role="faculty"><CoverForColleague /></Protected>} />
       <Route path="/faculty/mark" element={<Protected role="faculty"><MarkAttendance /></Protected>} />
       <Route path="/faculty/records" element={<Protected role="faculty"><FacultyRecords /></Protected>} />
       <Route path="/faculty/profile" element={<Protected role="faculty"><FacultyProfile /></Protected>} />
       <Route path="/faculty/report" element={<Navigate to="/faculty/records" replace />} />
-      
+
       <Route path="*" element={<Navigate to={auth ? (auth.role === "admin" ? "/admin" : "/faculty") : "/login"} replace />} />
     </Routes>
   );

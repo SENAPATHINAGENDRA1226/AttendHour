@@ -21,7 +21,13 @@ export default function Login() {
     try {
       const res = await api.post("/auth/login", { username, password });
       login({ token: res.data.access_token, role: res.data.role, fullName: res.data.full_name, username });
-      navigate(res.data.role === "admin" ? "/admin" : "/faculty");
+      if (res.data.role === "admin") {
+        navigate("/admin");
+      } else if (res.data.role === "shared_faculty") {
+        navigate("/faculty/select");
+      } else {
+        navigate("/faculty");
+      }
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || "Login failed. Check your credentials.");
     } finally {
@@ -33,8 +39,8 @@ export default function Login() {
     <div className="login-shell">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-header">
-          <div className="login-icon">
-            <span className="material-symbols-outlined" style={{ fontSize: 32 }}>badge</span>
+          <div className="login-icon" style={{ background: "transparent", boxShadow: "none", width: "auto", height: "auto", margin: "0 auto 16px" }}>
+            <img src="/icons/Attend Final logo.png" alt="AttendHour Logo" style={{ height: 72, width: "auto", objectFit: "contain" }} />
           </div>
           <h1>AttendHour</h1>
           <p className="tagline">Department Attendance &amp; Academic Log</p>
@@ -86,6 +92,9 @@ export default function Login() {
           {loading ? <Spinner inline label="Signing in…" /> : "Sign in"}
         </button>
       </form>
+      <footer className="app-attribution app-attribution--login">
+        Developed by Senapathi Nagendra · CSMD · © 2026 All Rights Reserved
+      </footer>
     </div>
   );
 }

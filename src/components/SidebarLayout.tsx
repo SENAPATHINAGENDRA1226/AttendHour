@@ -14,6 +14,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
   const isFaculty = auth?.role === "faculty";
   const isAdmin = auth?.role === "admin";
+  const isSharedFaculty = auth?.role === "shared_faculty";
 
   // Auto-close sidebar on route change
   useEffect(() => {
@@ -39,13 +40,20 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const getInitial = () => {
     if (auth?.fullName) return auth.fullName.charAt(0).toUpperCase();
     if (auth?.username) return auth.username.charAt(0).toUpperCase();
-    return isFaculty ? "F" : "A";
+    return isFaculty || isSharedFaculty ? "F" : "A";
   };
 
   const facultyNav = [
     { label: "Home", path: "/faculty", icon: "home" },
     { label: "Records", path: "/faculty/records", icon: "monitoring" },
     { label: "Profile", path: "/faculty/profile", icon: "account_circle" },
+  ];
+
+  const sharedFacultyNav = [
+    { label: "Post for myself", path: "/faculty", icon: "home" },
+    { label: "Post for another", path: "/faculty/cover", icon: "swap_horiz" },
+    { label: "Records", path: "/faculty/records", icon: "monitoring" },
+    { label: "My Profile", path: "/faculty/profile", icon: "account_circle" },
   ];
 
   const adminNav = [
@@ -58,7 +66,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { label: "Reports", path: "/admin/reports", icon: "analytics" },
   ];
 
-  const navItems = isFaculty ? facultyNav : isAdmin ? adminNav : [];
+  const navItems = isSharedFaculty ? sharedFacultyNav : isFaculty ? facultyNav : isAdmin ? adminNav : [];
 
   return (
     <div className="app-layout">
@@ -146,7 +154,12 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </div>
       </aside>
 
-      <main className="main-content">{children}</main>
+      <main className="main-content">
+        {children}
+        <footer className="app-attribution">
+          Developed by Senapathi Nagendra · CSMD · © 2026 All Rights Reserved
+        </footer>
+      </main>
     </div>
   );
 };
