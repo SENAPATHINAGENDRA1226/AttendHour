@@ -64,6 +64,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { label: "Sections", path: "/admin/sections", icon: "view_agenda" },
     { label: "Timetable", path: "/admin/timetable", icon: "calendar_month" },
     { label: "Reports", path: "/admin/reports", icon: "analytics" },
+    { label: "Audit Logs", path: "/admin/audit-logs", icon: "receipt_long" },
   ];
 
   const navItems = isSharedFaculty ? sharedFacultyNav : isFaculty ? facultyNav : isAdmin ? adminNav : [];

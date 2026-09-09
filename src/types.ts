@@ -256,5 +256,32 @@ export interface FacultyProfileData {
   recent_sessions: RecentSessionSummary[];
 }
 
+export interface AdminAuditLogEntry {
+  login_user_id: number;
+  login_username: string;
+  acting_faculty_id?: number | null;
+  acting_faculty_name?: string | null;
+  class_faculty_id?: number | null;
+  class_faculty_name?: string | null;
+  action:
+    | "attendance_posted"
+    | "attendance_edited"
+    | "attendance_overridden"
+    | "session_marked_holiday"
+    | "session_marked_faculty_leave"
+    | string;
+  section_id?: number | null;
+  section_name: string;
+  subject_name: string;
+  period_number: number;
+  session_date: string;
+  timestamp: string;
+  is_substitution: boolean;
+}
 
-
+export interface AdminAuditLogsResponse {
+  items: AdminAuditLogEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}

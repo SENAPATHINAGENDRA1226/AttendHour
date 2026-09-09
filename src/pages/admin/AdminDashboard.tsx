@@ -7,6 +7,7 @@ import ClassesManage from "./ClassesManage";
 import StudentUpload from "./StudentUpload";
 import TimetableManage from "./TimetableManage";
 import AdminReports from "./AdminReports";
+import AdminAuditLogs from "./AdminAuditLogs";
 
 const TABS = [
   { key: "overview", label: "Dashboard", path: "/admin" },
@@ -16,6 +17,7 @@ const TABS = [
   { key: "classes", label: "Sections", path: "/admin/sections" },
   { key: "timetable", label: "Timetable", path: "/admin/timetable" },
   { key: "reports", label: "Reports", path: "/admin/reports" },
+  { key: "audit-logs", label: "Audit Logs", path: "/admin/audit-logs" },
 ] as const;
 
 export default function AdminDashboard() {
@@ -29,6 +31,7 @@ export default function AdminDashboard() {
     if (path.startsWith("/admin/sections") || path.startsWith("/admin/classes")) return "classes";
     if (path.startsWith("/admin/timetable")) return "timetable";
     if (path.startsWith("/admin/reports")) return "reports";
+    if (path.startsWith("/admin/audit-logs")) return "audit-logs";
     return "overview";
   };
 
@@ -50,6 +53,7 @@ export default function AdminDashboard() {
       {activeTab === "students" && <StudentUpload />}
       {activeTab === "timetable" && <TimetableManage />}
       {activeTab === "reports" && <AdminReports />}
+      {activeTab === "audit-logs" && <AdminAuditLogs />}
     </SidebarLayout>
   );
 }
