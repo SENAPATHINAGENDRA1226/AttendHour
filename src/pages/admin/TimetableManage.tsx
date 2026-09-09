@@ -8,6 +8,13 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const SHORT_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const PERIODS = [1, 2, 3, 4, 5, 6, 7];
 
+const YEAR_OPTIONS = [
+  { value: "1", label: "1st Year", color: "#0369a1", bg: "#e0f2fe" },
+  { value: "2", label: "2nd Year", color: "#3730a3", bg: "#e0e7ff" },
+  { value: "3", label: "3rd Year", color: "#5b21b6", bg: "#ede9fe" },
+  { value: "4", label: "4th Year", color: "#86198f", bg: "#fae8ff" },
+];
+
 export default function TimetableManage() {
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -17,6 +24,7 @@ export default function TimetableManage() {
   const [students, setStudents] = useState<Student[]>([]);
 
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -226,75 +234,211 @@ export default function TimetableManage() {
   return (
     <div>
       {/* Top Description & Action Bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 className="page-heading" style={{ fontSize: "1.4rem" }}>Sections & Timetable Allocation</h2>
-          <p className="page-subheading" style={{ margin: 0 }}>Allocation set here drives every faculty's daily class list.</p>
+          <h2 className="page-heading" style={{ fontSize: "1.4rem", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)" }}>calendar_month</span>
+            Sections & Timetable Allocation
+          </h2>
+          <p className="page-subheading" style={{ margin: "4px 0 0" }}>Allocation set here drives every faculty's daily scheduled classes.</p>
         </div>
         <button
           className="btn secondary"
           onClick={() => setShowBulkUpload(!showBulkUpload)}
-          style={{ fontSize: "0.82rem" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem" }}
         >
-          {showBulkUpload ? "Close Import Panel" : "📁 Bulk Import Timetable"}
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+            upload_file
+          </span>
+          {showBulkUpload ? "Close Import Panel" : "Bulk Import Timetable"}
         </button>
       </div>
 
       {/* Optional Bulk Import Card */}
       {showBulkUpload && (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <h3 style={{ margin: 0 }}>Bulk Timetable CSV/XLSX Upload</h3>
-            <button className="btn secondary" type="button" onClick={downloadTimetableTemplate}>
+        <div className="card" style={{ border: "2px solid var(--primary)", marginBottom: 20, animation: "fadeIn 0.2s ease" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>upload_file</span>
+              Bulk Timetable CSV/XLSX Upload
+            </h3>
+            <button
+              className="btn secondary"
+              type="button"
+              onClick={downloadTimetableTemplate}
+              style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>download</span>
               Download CSV Template
             </button>
           </div>
-          <p className="hint-text" style={{ marginBottom: 14 }}>
-            Required columns: <code>faculty_username</code>, <code>section_display_name</code>, <code>subject_code</code>, <code>day_of_week</code> (Monday-Sunday), <code>period_number</code> (1-7), <code>session_type</code>.
+          <p className="hint-text" style={{ marginBottom: 14, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
+            Upload a CSV or Excel (.xlsx) file with timetable slot mappings.
+            <br />
+            <strong>Required columns:</strong> <code>faculty_username</code>, <code>section_display_name</code>, <code>subject_code</code>, <code>day_of_week</code> (Monday-Sunday), <code>period_number</code> (1-7), <code>session_type</code> (lecture or lab).
           </p>
           {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
           <form onSubmit={handleTimetableUpload} className="form-grid">
             <div style={{ gridColumn: "span 2" }}>
-              <label>Timetable file</label>
-              <input type="file" accept=".csv,.xlsx" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required disabled={uploadBusy} />
+              <label style={{ fontWeight: 600, fontSize: "0.85rem" }}>Timetable File (.csv or .xlsx)</label>
+              <input
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                required
+                disabled={uploadBusy}
+                style={{ width: "100%", marginTop: 4 }}
+              />
             </div>
             <div style={{ alignSelf: "end" }}>
-              <button className="btn" disabled={uploadBusy || !uploadFile} type="submit">
-                {uploadBusy ? <Spinner inline label="Importing…" /> : "Import Timetable"}
+              <button
+                className="btn"
+                disabled={uploadBusy || !uploadFile}
+                type="submit"
+                style={{ backgroundColor: "var(--primary)", color: "#fff", fontWeight: 600 }}
+              >
+                {uploadBusy ? <Spinner inline label="Importing Timetable…" /> : "Import & Process Timetable"}
               </button>
             </div>
           </form>
           {uploadResult && (
-            <div className="hint-text" style={{ marginTop: 10 }}>
-              Inserted {uploadResult.inserted}, updated {uploadResult.updated} slots.
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                borderRadius: 6,
+                background:
+                  uploadResult.errors.length > 0 && uploadResult.inserted === 0 && uploadResult.updated === 0
+                    ? "var(--absent-bg, #fee2e2)"
+                    : "var(--present-bg, #dcfce7)",
+                color:
+                  uploadResult.errors.length > 0 && uploadResult.inserted === 0 && uploadResult.updated === 0
+                    ? "var(--absent, #b91c1c)"
+                    : "var(--present, #15803d)",
+                fontSize: "0.88rem",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                ✓ Timetable processed: Inserted {uploadResult.inserted}, updated {uploadResult.updated} slots.
+              </div>
               {uploadResult.errors.length > 0 && (
-                <ul style={{ marginTop: 6 }}>{uploadResult.errors.map((e, i) => <li key={i} className="error-text">{e}</li>)}</ul>
+                <div style={{ marginTop: 8, color: "var(--absent, #b91c1c)" }}>
+                  <strong>Errors / Warnings ({uploadResult.errors.length}):</strong>
+                  <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+                    {uploadResult.errors.map((e, i) => (
+                      <li key={i} style={{ fontSize: "0.82rem" }}>{e}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           )}
         </div>
       )}
 
+      {/* Year Filter Pills for Section Selector */}
+      <div
+        className="card"
+        style={{
+          marginBottom: 14,
+          padding: "10px 14px",
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#ffffff",
+          border: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--ink)", marginRight: 4, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>filter_list</span>
+            Year:
+          </span>
+          <button
+            type="button"
+            className={`btn ${selectedYearFilter === "all" ? "" : "secondary"}`}
+            style={{
+              borderRadius: 16,
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: 600,
+              backgroundColor: selectedYearFilter === "all" ? "var(--primary)" : "#f1f5f9",
+              color: selectedYearFilter === "all" ? "#ffffff" : "var(--ink)",
+              border: "1px solid var(--border)",
+            }}
+            onClick={() => setSelectedYearFilter("all")}
+          >
+            All Years ({sections.length})
+          </button>
+
+          {YEAR_OPTIONS.map((yo) => {
+            const count = sections.filter((s) => String(s.year) === yo.value).length;
+            const isSelected = selectedYearFilter === yo.value;
+            return (
+              <button
+                key={yo.value}
+                type="button"
+                style={{
+                  borderRadius: 16,
+                  padding: "4px 12px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: isSelected ? `2px solid ${yo.color}` : "1px solid var(--border)",
+                  backgroundColor: isSelected ? yo.color : yo.bg,
+                  color: isSelected ? "#ffffff" : yo.color,
+                  transition: "all 0.15s ease",
+                }}
+                onClick={() => setSelectedYearFilter(yo.value)}
+              >
+                {yo.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Section Selector Pills */}
       <div className="section-pills-row">
-        {sections.map((sec) => {
-          const isSelected = sec.id === selectedSectionId;
-          const secSlots = entries.filter((e) => e.section_id === sec.id);
-          const hasLab = secSlots.some((e) => e.session_type === "lab");
+        {sections
+          .filter((s) => (selectedYearFilter === "all" ? true : String(s.year) === selectedYearFilter))
+          .map((sec) => {
+            const isSelected = sec.id === selectedSectionId;
+            const secSlots = entries.filter((e) => e.section_id === sec.id);
+            const hasLab = secSlots.some((e) => e.session_type === "lab");
+            const yearOpt = YEAR_OPTIONS.find((y) => Number(y.value) === sec.year);
 
-          return (
-            <div
-              key={sec.id}
-              className={`section-pill-card ${isSelected ? "active" : ""}`}
-              onClick={() => setSelectedSectionId(sec.id)}
-            >
-              <div className="sec-title">{sec.display_name}</div>
-              <div className="sec-sub">
-                {hasLab ? "Theory + Lab" : "Theory"} · Academic Yr {sec.academic_year}
+            return (
+              <div
+                key={sec.id}
+                className={`section-pill-card ${isSelected ? "active" : ""}`}
+                onClick={() => setSelectedSectionId(sec.id)}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="sec-title">{sec.display_name}</div>
+                  {yearOpt && (
+                    <span
+                      style={{
+                        padding: "1px 6px",
+                        borderRadius: 8,
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        backgroundColor: yearOpt.bg,
+                        color: yearOpt.color,
+                      }}
+                    >
+                      {yearOpt.label}
+                    </span>
+                  )}
+                </div>
+                <div className="sec-sub">
+                  {hasLab ? "Theory + Lab" : "Theory"} · Academic Yr {sec.academic_year}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
       {/* Main Timetable Grid Card */}
@@ -450,15 +594,39 @@ export default function TimetableManage() {
                   required
                 >
                   <option value="">Select subject…</option>
-                  {subjects.map((sub) => {
-                    const allocFacId = getSubjectAllocatedFacultyId(sub.id);
-                    const allocFac = allocFacId ? faculty.find((f) => f.id === Number(allocFacId)) : null;
-                    return (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name} ({sub.code}){allocFac ? ` — 👤 ${allocFac.full_name}` : ""}
-                      </option>
-                    );
-                  })}
+                  {(() => {
+                    const secYear = currentSection?.year;
+                    const matchingYearSubs = subjects.filter((s) => secYear && s.year === secYear);
+                    const otherSubs = subjects.filter((s) => !secYear || s.year !== secYear);
+
+                    const renderSubOption = (sub: Subject) => {
+                      const allocFacId = getSubjectAllocatedFacultyId(sub.id);
+                      const allocFac = allocFacId ? faculty.find((f) => f.id === Number(allocFacId)) : null;
+                      const yrLabel = sub.year ? `[Year ${sub.year}] ` : "";
+                      return (
+                        <option key={sub.id} value={sub.id}>
+                          {yrLabel}{sub.name} ({sub.code}){allocFac ? ` — 👤 ${allocFac.full_name}` : ""}
+                        </option>
+                      );
+                    };
+
+                    if (matchingYearSubs.length > 0) {
+                      return (
+                        <>
+                          <optgroup label={`Year ${secYear} Subjects (Matching ${currentSection?.display_name || "Section"})`}>
+                            {matchingYearSubs.map(renderSubOption)}
+                          </optgroup>
+                          {otherSubs.length > 0 && (
+                            <optgroup label="Other Year / General Subjects">
+                              {otherSubs.map(renderSubOption)}
+                            </optgroup>
+                          )}
+                        </>
+                      );
+                    }
+
+                    return subjects.map(renderSubOption);
+                  })()}
                 </select>
                 {modalForm.subject_id && (() => {
                   const allocFacId = getSubjectAllocatedFacultyId(modalForm.subject_id);

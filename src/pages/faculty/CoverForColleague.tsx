@@ -25,6 +25,13 @@ function formatDateFriendly(dateStr: string) {
   }
 }
 
+const YEAR_COLORS: Record<number, { color: string; bg: string }> = {
+  1: { color: "#0369a1", bg: "#e0f2fe" },
+  2: { color: "#3730a3", bg: "#e0e7ff" },
+  3: { color: "#5b21b6", bg: "#ede9fe" },
+  4: { color: "#86198f", bg: "#fae8ff" },
+};
+
 export default function CoverForColleague() {
   const { operator } = useAuth();
   const [date, setDate] = useState(todayISO());
@@ -74,19 +81,22 @@ export default function CoverForColleague() {
     return Array.from(years).sort((a, b) => a - b);
   }, [classes]);
 
-  // Default to first available year if current selectedYear is not valid
+  // Default to 0 (All Years) if current selectedYear is not valid
   useEffect(() => {
     if (availableYears.length > 0) {
-      if (selectedYear === null || !availableYears.includes(selectedYear)) {
-        setSelectedYear(availableYears[0]);
+      if (selectedYear === null) {
+        setSelectedYear(0); // All Years by default so faculty with both years see all periods
+      } else if (selectedYear !== 0 && !availableYears.includes(selectedYear)) {
+        setSelectedYear(0);
       }
     }
   }, [availableYears, selectedYear]);
 
-  const activeYear = selectedYear ?? (availableYears.length > 0 ? availableYears[0] : 2);
+  const activeYear = selectedYear ?? 0;
 
-  // Filter classes by active year
+  // Filter classes by active year (0 = All Years)
   const filteredClasses = useMemo(() => {
+    if (activeYear === 0) return classes;
     return classes.filter((c) => c.year === activeYear);
   }, [classes, activeYear]);
 
@@ -201,16 +211,59 @@ export default function CoverForColleague() {
 
         {/* Year Tabs */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: "1px solid var(--color-border)", paddingTop: 16 }}>
-          {displayYears.map((y) => (
-            <button
-              key={y}
-              className={`btn small ${activeYear === y ? "primary" : "secondary"}`}
-              onClick={() => setSelectedYear(y)}
-              style={{ borderRadius: 20, padding: "6px 18px", fontWeight: activeYear === y ? 700 : 500 }}
-            >
-              {y}{y === 1 ? "st" : y === 2 ? "nd" : y === 3 ? "rd" : "th"} Year
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setSelectedYear(0)}
+            style={{
+              borderRadius: 20,
+              padding: "6px 18px",
+              fontWeight: activeYear === 0 ? 700 : 600,
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              border: activeYear === 0 ? "2px solid var(--primary)" : "1px solid var(--border)",
+              backgroundColor: activeYear === 0 ? "var(--primary)" : "var(--color-surface-raised, #f8fafc)",
+              color: activeYear === 0 ? "#ffffff" : "var(--ink-dark)",
+              transition: "all 0.15s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+              apps
+            </span>
+            All Years
+          </button>
+          {displayYears.map((y) => {
+            const yc = YEAR_COLORS[y] || { color: "var(--primary)", bg: "var(--primary-light)" };
+            const isSelected = activeYear === y;
+            return (
+              <button
+                key={y}
+                type="button"
+                onClick={() => setSelectedYear(y)}
+                style={{
+                  borderRadius: 20,
+                  padding: "6px 18px",
+                  fontWeight: isSelected ? 700 : 600,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  border: isSelected ? `2px solid ${yc.color}` : "1px solid var(--border)",
+                  backgroundColor: isSelected ? yc.color : yc.bg,
+                  color: isSelected ? "#ffffff" : yc.color,
+                  transition: "all 0.15s ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                  calendar_month
+                </span>
+                {y}{y === 1 ? "st" : y === 2 ? "nd" : y === 3 ? "rd" : "th"} Year
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -219,10 +272,41 @@ export default function CoverForColleague() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--primary)" }}>event</span>
           <span style={{ fontWeight: 700, fontSize: "1rem" }}>{formatDateFriendly(date)}</span>
-          {activeYear !== null && (
-            <span className="badge" style={{ marginLeft: 8, background: "var(--primary)", color: "#fff", padding: "3px 10px", borderRadius: 12 }}>
-              {activeYear}{activeYear === 1 ? "st" : activeYear === 2 ? "nd" : activeYear === 3 ? "rd" : "th"} Year
+          {activeYear === 0 ? (
+            <span
+              style={{
+                marginLeft: 8,
+                backgroundColor: "var(--primary-light, #e0e7ff)",
+                color: "var(--primary, #3730a3)",
+                padding: "3px 10px",
+                borderRadius: 12,
+                fontWeight: 700,
+                fontSize: "0.82rem",
+                border: "1px solid var(--primary)30",
+              }}
+            >
+              All Years
             </span>
+          ) : (
+            (() => {
+              const yc = YEAR_COLORS[activeYear] || { color: "var(--primary)", bg: "var(--primary-light)" };
+              return (
+                <span
+                  style={{
+                    marginLeft: 8,
+                    backgroundColor: yc.bg,
+                    color: yc.color,
+                    padding: "3px 10px",
+                    borderRadius: 12,
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    border: `1px solid ${yc.color}30`,
+                  }}
+                >
+                  {activeYear}{activeYear === 1 ? "st" : activeYear === 2 ? "nd" : activeYear === 3 ? "rd" : "th"} Year
+                </span>
+              );
+            })()
           )}
         </div>
         <div style={{ fontSize: "0.85rem", color: "var(--ink-soft)" }}>

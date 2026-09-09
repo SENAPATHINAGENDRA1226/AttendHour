@@ -34,6 +34,13 @@ function formatDateFriendly(dateStr: string) {
   }
 }
 
+const YEAR_COLORS: Record<number, { color: string; bg: string }> = {
+  1: { color: "#0369a1", bg: "#e0f2fe" },
+  2: { color: "#3730a3", bg: "#e0e7ff" },
+  3: { color: "#5b21b6", bg: "#ede9fe" },
+  4: { color: "#86198f", bg: "#fae8ff" },
+};
+
 export default function FacultyDashboard() {
   const { auth, operator } = useAuth();
   const [date, setDate] = useState(todayISO());
@@ -270,7 +277,24 @@ export default function FacultyDashboard() {
               <div key={`${cls.section_id}-${cls.subject_id}`} className="class-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
                   <div className="class-card-header">
-                    <div className="class-title">{cls.section_name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div className="class-title">{cls.section_name}</div>
+                      {cls.year && cls.year > 0 ? (
+                        <span
+                          style={{
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            backgroundColor: (YEAR_COLORS[cls.year] || YEAR_COLORS[2]).bg,
+                            color: (YEAR_COLORS[cls.year] || YEAR_COLORS[2]).color,
+                            border: `1px solid ${(YEAR_COLORS[cls.year] || YEAR_COLORS[2]).color}40`,
+                          }}
+                        >
+                          {cls.year}{cls.year === 1 ? "st" : cls.year === 2 ? "nd" : cls.year === 3 ? "rd" : "th"} Year
+                        </span>
+                      ) : null}
+                    </div>
                     <div>
                       {isCompleted ? (
                         <span className="status-badge posted">✓ Completed</span>

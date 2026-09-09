@@ -9,9 +9,9 @@ export default function FacultyManage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const editUsernameInputRef = useRef<HTMLInputElement>(null);
+  const editFullNameInputRef = useRef<HTMLInputElement>(null);
 
-  const [form, setForm] = useState({ username: "", full_name: "", email: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", email: "" });
   const [showAddForm, setShowAddForm] = useState(false);
   const [formError, setFormError] = useState("");
   const [formBusy, setFormBusy] = useState(false);
@@ -20,7 +20,7 @@ export default function FacultyManage() {
   const [actionError, setActionError] = useState("");
 
   const [editItem, setEditItem] = useState<Faculty | null>(null);
-  const [editForm, setEditForm] = useState({ username: "", full_name: "", email: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", email: "" });
   const [editBusy, setEditBusy] = useState(false);
 
   // Allocation state
@@ -85,7 +85,7 @@ export default function FacultyManage() {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    if (editItem && editUsernameInputRef.current) editUsernameInputRef.current.focus();
+    if (editItem && editFullNameInputRef.current) editFullNameInputRef.current.focus();
   }, [editItem]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -99,10 +99,11 @@ export default function FacultyManage() {
     setFormError("");
     setFormBusy(true);
     try {
-      const payload: Record<string, string> = { username: form.username, full_name: form.full_name, email: form.email };
-      if (form.password.trim()) payload.password = form.password;
-      await api.post("/admin/faculty", payload);
-      setForm({ username: "", full_name: "", email: "", password: "" });
+      await api.post("/admin/faculty", {
+        full_name: form.full_name.trim(),
+        email: form.email.trim() || undefined,
+      });
+      setForm({ full_name: "", email: "" });
       await load();
     } catch (err: any) {
       setFormError(err?.response?.data?.detail || err?.message || "Could not create faculty account");
@@ -158,7 +159,7 @@ export default function FacultyManage() {
 
   function startEdit(f: Faculty) {
     setEditItem(f);
-    setEditForm({ username: f.username, full_name: f.full_name, email: f.email || "" });
+    setEditForm({ full_name: f.full_name, email: f.email || "" });
   }
 
   async function saveEdit(e: React.FormEvent) {
@@ -167,7 +168,10 @@ export default function FacultyManage() {
     setEditBusy(true);
     setActionError("");
     try {
-      await api.patch(`/admin/faculty/${editItem.id}`, editForm);
+      await api.patch(`/admin/faculty/${editItem.id}`, {
+        full_name: editForm.full_name.trim(),
+        email: editForm.email.trim() || undefined,
+      });
       setEditItem(null);
       await load();
     } catch (err: any) {
@@ -261,24 +265,14 @@ export default function FacultyManage() {
           role="dialog"
           aria-labelledby="edit-faculty-heading"
         >
-          <h3 id="edit-faculty-heading">Edit Faculty Account: {editItem.full_name}</h3>
+          <h3 id="edit-faculty-heading">Edit Faculty Member: {editItem.full_name}</h3>
           <form onSubmit={saveEdit}>
             <div className="form-grid">
               <div>
-                <label htmlFor="edit-fac-username">Username</label>
-                <input
-                  id="edit-fac-username"
-                  ref={editUsernameInputRef}
-                  value={editForm.username}
-                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
-                  required
-                  disabled={editBusy}
-                />
-              </div>
-              <div>
-                <label htmlFor="edit-fac-fullname">Full Name</label>
+                <label htmlFor="edit-fac-fullname">Full Name *</label>
                 <input
                   id="edit-fac-fullname"
+                  ref={editFullNameInputRef}
                   value={editForm.full_name}
                   onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
                   required
@@ -286,7 +280,7 @@ export default function FacultyManage() {
                 />
               </div>
               <div>
-                <label htmlFor="edit-fac-email">Email</label>
+                <label htmlFor="edit-fac-email">Email (optional)</label>
                 <input
                   id="edit-fac-email"
                   type="email"
@@ -331,19 +325,10 @@ export default function FacultyManage() {
           <form onSubmit={createFaculty}>
             <div className="form-grid">
               <div>
-                <label htmlFor="create-fac-username">Username</label>
-                <input
-                  id="create-fac-username"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  required
-                  disabled={formBusy}
-                />
-              </div>
-              <div>
-                <label htmlFor="create-fac-fullname">Full Name</label>
+                <label htmlFor="create-fac-fullname">Full Name *</label>
                 <input
                   id="create-fac-fullname"
+                  placeholder="e.g. Dr. K. Ramesh"
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                   required
@@ -355,19 +340,10 @@ export default function FacultyManage() {
                 <input
                   id="create-fac-email"
                   type="email"
+                  placeholder="e.g. ramesh@avanthi.edu.in"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   disabled={formBusy}
-                />
-              </div>
-              <div>
-                <label htmlFor="create-fac-password">Password <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional — defaults to faculty@123)</span></label>
-                <input
-                  id="create-fac-password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  disabled={formBusy}
-                  placeholder="Leave blank for default password"
                 />
               </div>
             </div>
@@ -393,8 +369,8 @@ export default function FacultyManage() {
               {/* Faculty row */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontWeight: 600 }}>{f.full_name}</div>
-                  <div style={{ fontSize: "0.82rem", color: "var(--ink-soft)" }}>@{f.username}{f.email ? ` · ${f.email}` : ""}</div>
+                  <div style={{ fontWeight: 700, fontSize: "0.98rem", color: "var(--ink-dark)" }}>{f.full_name}</div>
+                  {f.email && <div style={{ fontSize: "0.82rem", color: "var(--ink-soft)" }}>{f.email}</div>}
                 </div>
                 <span className={`status-badge ${f.is_active ? "posted" : "pending"}`}>
                   {f.is_active ? "Active" : "Disabled"}
@@ -427,15 +403,6 @@ export default function FacultyManage() {
                     {actionBusyId === f.id ? (
                       <Spinner inline label="…" />
                     ) : f.is_active ? "Disable" : "Enable"}
-                  </button>
-                  <button
-                    className="btn secondary"
-                    onClick={() => resetPassword(f.id)}
-                    disabled={actionBusyId === f.id}
-                    style={{ fontSize: "0.78rem" }}
-                    aria-label={`Reset password for ${f.full_name}`}
-                  >
-                    Reset pw
                   </button>
                   <button
                     className="btn danger"

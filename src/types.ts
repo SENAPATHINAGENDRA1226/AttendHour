@@ -31,6 +31,7 @@ export interface Subject {
   name: string;
   code: string;
   year?: number | null;
+  branch?: string | null;
 }
 
 export interface FacultyAllocation {
@@ -83,6 +84,7 @@ export interface TodayClass {
   subject_code: string;
   periods_posted: number[];
   scheduled_periods?: number[];
+  year?: number;
 }
 
 export interface StudentMark {

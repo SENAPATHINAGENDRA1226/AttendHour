@@ -4,12 +4,20 @@ import { Section, Student } from "../../types";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 
+const YEAR_OPTIONS = [
+  { value: "1", label: "1st Year", color: "#0369a1", bg: "#e0f2fe" },
+  { value: "2", label: "2nd Year", color: "#3730a3", bg: "#e0e7ff" },
+  { value: "3", label: "3rd Year", color: "#5b21b6", bg: "#ede9fe" },
+  { value: "4", label: "4th Year", color: "#86198f", bg: "#fae8ff" },
+];
+
 export default function StudentUpload() {
   const [sections, setSections] = useState<Section[]>([]);
   const [loadingSections, setLoadingSections] = useState(true);
   const [sectionsError, setSectionsError] = useState("");
 
   const [sectionId, setSectionId] = useState("");
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>("all");
   const [file, setFile] = useState<File | null>(null);
 
   const [students, setStudents] = useState<Student[]>([]);
@@ -157,14 +165,20 @@ export default function StudentUpload() {
     return <ErrorBanner message={sectionsError} onRetry={fetchSections} />;
   }
 
+  const filteredSections = useMemo(() => {
+    if (selectedYearFilter === "all") return sections;
+    return sections.filter((s) => String(s.year) === selectedYearFilter);
+  }, [sections, selectedYearFilter]);
+
   return (
     <div>
       {/* Overview Stat Header */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: "1.3rem", fontFamily: "var(--font-display)" }}>
-              🎓 Student Roster Directory
+            <h2 style={{ margin: 0, fontSize: "1.3rem", fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)" }}>school</span>
+              Student Roster Directory
             </h2>
             <div style={{ color: "var(--ink-soft)", fontSize: "0.9rem", marginTop: 4 }}>
               Overview of all department sections and student enrollment counts.
@@ -180,18 +194,206 @@ export default function StudentUpload() {
               <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--ink-strong)" }}>{sections.length}</div>
               <div style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>Total Sections</div>
             </div>
+            <button
+              className="btn secondary"
+              type="button"
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+                upload_file
+              </span>
+              {showUploadForm ? "Close Roster Upload" : "Bulk Import Roster"}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Section Cards Bar */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--ink-soft)", marginBottom: 10 }}>
-          Select Section to View Roster:
+      {/* Collapsible Upload CSV Roster Card */}
+      {showUploadForm && (
+        <div className="card" style={{ border: "2px solid var(--primary)", marginBottom: 24, animation: "fadeIn 0.2s ease" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>upload_file</span>
+              Bulk Import Student Roster ({activeSectionObj?.display_name || "Select Section"})
+            </h3>
+            <button
+              className="btn secondary"
+              type="button"
+              onClick={downloadRosterTemplate}
+              style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>download</span>
+              Download CSV Template
+            </button>
+          </div>
+
+          <p className="hint-text" style={{ marginBottom: 14, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
+            Upload a CSV or Excel (.xlsx) file with student records.
+            <br />
+            <strong>Required columns:</strong> <code>roll_no</code>, <code>name</code>.
+            <br />
+            <strong>Optional columns:</strong> <code>order_no</code> (1–70 register order). Re-uploading updates existing roll numbers and adds new ones.
+          </p>
+
+          {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
+
+          <form onSubmit={handleUpload} className="form-grid">
+            <div>
+              <label htmlFor="student-sec-select" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                Target Section *
+              </label>
+              <select
+                id="student-sec-select"
+                value={sectionId}
+                onChange={(e) => handleSelectSection(e.target.value)}
+                required
+                disabled={busy}
+              >
+                <option value="">Select Section…</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.display_name} ({s.student_count ?? 0} students)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="student-file-input" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                Select File (.csv or .xlsx) *
+              </label>
+              <input
+                id="student-file-input"
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                required
+                disabled={busy}
+              />
+            </div>
+            <div style={{ alignSelf: "end" }}>
+              <button
+                className="btn"
+                disabled={busy || !file || !sectionId}
+                type="submit"
+                style={{ backgroundColor: "var(--primary)", color: "#fff", fontWeight: 600 }}
+              >
+                {busy ? <Spinner inline label="Importing Roster…" /> : "Upload & Process Roster"}
+              </button>
+            </div>
+          </form>
+
+          {result && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                borderRadius: 6,
+                background:
+                  result.errors.length > 0 && result.inserted === 0 && result.updated === 0
+                    ? "var(--absent-bg, #fee2e2)"
+                    : "var(--present-bg, #dcfce7)",
+                color:
+                  result.errors.length > 0 && result.inserted === 0 && result.updated === 0
+                    ? "var(--absent, #b91c1c)"
+                    : "var(--present, #15803d)",
+                fontSize: "0.88rem",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                ✓ Processing complete: {result.inserted} student{result.inserted === 1 ? "" : "s"} inserted, {result.updated} updated.
+              </div>
+              {result.errors.length > 0 && (
+                <div style={{ marginTop: 8, color: "var(--absent, #b91c1c)" }}>
+                  <strong>Errors / Warnings ({result.errors.length}):</strong>
+                  <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+                    {result.errors.map((err, i) => (
+                      <li key={i} style={{ fontSize: "0.82rem" }}>
+                        {err}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Year Filter Pills for Sections Bar */}
+      <div
+        className="card"
+        style={{
+          marginBottom: 16,
+          padding: "12px 16px",
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#ffffff",
+          border: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--ink)", marginRight: 4, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>filter_list</span>
+            Year:
+          </span>
+          <button
+            type="button"
+            className={`btn ${selectedYearFilter === "all" ? "" : "secondary"}`}
+            style={{
+              borderRadius: 16,
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: 600,
+              backgroundColor: selectedYearFilter === "all" ? "var(--primary)" : "#f1f5f9",
+              color: selectedYearFilter === "all" ? "#ffffff" : "var(--ink)",
+              border: "1px solid var(--border)",
+            }}
+            onClick={() => setSelectedYearFilter("all")}
+          >
+            All Years ({sections.length})
+          </button>
+
+          {YEAR_OPTIONS.map((yo) => {
+            const count = sections.filter((s) => String(s.year) === yo.value).length;
+            const isSelected = selectedYearFilter === yo.value;
+            return (
+              <button
+                key={yo.value}
+                type="button"
+                style={{
+                  borderRadius: 16,
+                  padding: "4px 12px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: isSelected ? `2px solid ${yo.color}` : "1px solid var(--border)",
+                  backgroundColor: isSelected ? yo.color : yo.bg,
+                  color: isSelected ? "#ffffff" : yo.color,
+                  transition: "all 0.15s ease",
+                }}
+                onClick={() => setSelectedYearFilter(yo.value)}
+              >
+                {yo.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ fontSize: "0.82rem", color: "var(--ink-soft)" }}>
+          Showing {filteredSections.length} of {sections.length} sections
+        </div>
+      </div>
+
+      {/* Section Cards Grid */}
+      <div style={{ marginBottom: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-          {sections.map((sec) => {
+          {filteredSections.map((sec) => {
             const isSelected = String(sec.id) === sectionId;
+            const yearOpt = YEAR_OPTIONS.find((y) => Number(y.value) === sec.year);
             return (
               <div
                 key={sec.id}
@@ -224,119 +426,29 @@ export default function StudentUpload() {
                     👥 {sec.student_count ?? 0}
                   </span>
                 </div>
-                <div style={{ fontSize: "0.8rem", color: "var(--ink-muted)", marginTop: 6 }}>
-                  Academic Year: {sec.academic_year}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                  <div style={{ fontSize: "0.78rem", color: "var(--ink-muted)" }}>
+                    {sec.academic_year}
+                  </div>
+                  {yearOpt && (
+                    <span
+                      style={{
+                        padding: "1px 7px",
+                        borderRadius: 10,
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        backgroundColor: yearOpt.bg,
+                        color: yearOpt.color,
+                      }}
+                    >
+                      {yearOpt.label}
+                    </span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Collapsible Upload CSV Roster Card */}
-      <div className="card" style={{ marginBottom: 24 }}>
-        <div
-          onClick={() => setShowUploadForm(!showUploadForm)}
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            cursor: "pointer",
-            userSelect: "none",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h3 style={{ margin: 0, borderBottom: "none", paddingBottom: 0 }}>
-              📤 Upload / Bulk Update Roster ({activeSectionObj?.display_name || "Select Section"})
-            </h3>
-            <span style={{ fontSize: "0.85rem", color: "var(--primary)", fontWeight: 600 }}>
-              {showUploadForm ? "▲ Hide Form" : "▼ Click to Upload"}
-            </span>
-          </div>
-          {showUploadForm && (
-            <button
-              className="btn secondary"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadRosterTemplate();
-              }}
-            >
-              Download CSV template
-            </button>
-          )}
-        </div>
-
-        {showUploadForm && (
-          <div style={{ marginTop: 16 }}>
-            <p className="hint-text" style={{ marginBottom: 14 }}>
-              CSV or XLSX with columns <code>roll_no</code>, <code>name</code>, and optional <code>order_no</code> (1–70). Re-uploading updates existing roll numbers and adds new ones.
-            </p>
-
-            {uploadError && <ErrorBanner message={uploadError} onDismiss={() => setUploadError("")} />}
-
-            <form onSubmit={handleUpload} className="form-grid">
-              <div>
-                <label>Target Section</label>
-                <select
-                  value={sectionId}
-                  onChange={(e) => handleSelectSection(e.target.value)}
-                  required
-                  disabled={busy}
-                >
-                  <option value="">Select Section…</option>
-                  {sections.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.display_name} ({s.student_count ?? 0} students)
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label>File (.csv or .xlsx)</label>
-                <input
-                  type="file"
-                  accept=".csv,.xlsx"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  required
-                  disabled={busy}
-                />
-              </div>
-              <div style={{ alignSelf: "end" }}>
-                <button className="btn" disabled={busy || !file || !sectionId} type="submit">
-                  {busy ? <Spinner inline label="Uploading…" /> : "Upload Roster"}
-                </button>
-              </div>
-            </form>
-
-            {result && (
-              <div
-                className="status-badge posted"
-                style={{
-                  marginTop: 16,
-                  padding: "12px 16px",
-                  borderRadius: "8px",
-                  fontSize: "0.95rem",
-                  display: "block",
-                  lineHeight: "1.5",
-                }}
-              >
-                <strong>✓ Student roster inserted successfully!</strong>
-                <div style={{ marginTop: 4 }}>
-                  {result.inserted} student{result.inserted === 1 ? "" : "s"} inserted, {result.updated} updated.
-                </div>
-                {result.errors.length > 0 && (
-                  <div style={{ marginTop: 8, color: "var(--absent)" }}>
-                    <strong>Errors encountered:</strong>
-                    <ul style={{ margin: "4px 0 0 18px", padding: 0 }}>
-                      {result.errors.map((e, i) => <li key={i}>{e}</li>)}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Roster Viewer Card */}

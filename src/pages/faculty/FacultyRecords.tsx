@@ -4,6 +4,7 @@ import { SidebarLayout } from "../../components/SidebarLayout";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 import { MonthlyReportRow, Section, Subject } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 
 function currentMonthISO() {
   const d = new Date();
@@ -12,9 +13,21 @@ function currentMonthISO() {
   return `${year}-${month}`;
 }
 
+const YEAR_OPTIONS = [
+  { value: "all", label: "All Years", color: "var(--primary)", bg: "var(--primary-light)" },
+  { value: "1", label: "1st Year", color: "#0369a1", bg: "#e0f2fe" },
+  { value: "2", label: "2nd Year", color: "#3730a3", bg: "#e0e7ff" },
+  { value: "3", label: "3rd Year", color: "#5b21b6", bg: "#ede9fe" },
+  { value: "4", label: "4th Year", color: "#86198f", bg: "#fae8ff" },
+];
+
 export default function FacultyRecords() {
+  const { auth, operator } = useAuth();
+  const isSharedFaculty = auth?.role === "shared_faculty";
+
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>("all");
   
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
@@ -25,22 +38,48 @@ export default function FacultyRecords() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadOptions() {
+    async function loadSections() {
       try {
         const secRes = await api.get<Section[]>("/faculty/options/sections");
         setSections(secRes.data);
         if (secRes.data.length > 0) {
           setSelectedSection(secRes.data[0].id);
         }
-
-        const subRes = await api.get<Subject[]>("/faculty/options/subjects");
-        setSubjects(subRes.data);
       } catch (err: any) {
-        setError(err?.message || "Failed to load options.");
+        setError(err?.message || "Failed to load sections.");
       }
     }
-    loadOptions();
-  }, []);
+    loadSections();
+  }, [operator?.id]);
+
+  // Load subjects dynamically whenever selected section changes
+  useEffect(() => {
+    async function loadSubjectsForSection() {
+      try {
+        const params = selectedSection ? { section_id: selectedSection } : {};
+        const subRes = await api.get<Subject[]>("/faculty/options/subjects", { params });
+        setSubjects(subRes.data);
+      } catch {
+        // ignore
+      }
+    }
+    loadSubjectsForSection();
+  }, [selectedSection]);
+
+  // Filter sections by academic year
+  const filteredSections = useMemo(() => {
+    if (selectedYearFilter === "all") return sections;
+    return sections.filter((s) => String(s.year) === selectedYearFilter);
+  }, [sections, selectedYearFilter]);
+
+  // Auto-select first section in filtered list when year filter changes
+  useEffect(() => {
+    if (filteredSections.length > 0) {
+      if (!selectedSection || !filteredSections.some((s) => s.id === selectedSection)) {
+        setSelectedSection(filteredSections[0].id);
+      }
+    }
+  }, [filteredSections, selectedSection]);
 
   async function fetchReport() {
     if (!selectedSection) return;
@@ -123,19 +162,58 @@ export default function FacultyRecords() {
         </div>
       </div>
 
+      {/* Year Filter Tabs */}
+      <div className="card" style={{ marginBottom: 16, padding: "14px 18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--ink-dark)", display: "flex", alignItems: "center", gap: 6 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--primary)" }}>school</span>
+            Academic Year Filter:
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {YEAR_OPTIONS.map((y) => {
+              const isSelected = selectedYearFilter === y.value;
+              return (
+                <button
+                  key={y.value}
+                  type="button"
+                  onClick={() => setSelectedYearFilter(y.value)}
+                  style={{
+                    borderRadius: 20,
+                    padding: "6px 16px",
+                    fontWeight: isSelected ? 700 : 600,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    border: isSelected ? `2px solid ${y.color}` : "1px solid var(--border)",
+                    backgroundColor: isSelected ? y.color : y.bg,
+                    color: isSelected ? "#ffffff" : y.color,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {y.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Filter Row */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="form-grid">
           <div>
-            <label htmlFor="sec-filter">Section</label>
+            <label htmlFor="sec-filter">Section ({filteredSections.length} available)</label>
             <select
               id="sec-filter"
               value={selectedSection || ""}
               onChange={(e) => setSelectedSection(Number(e.target.value))}
             >
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.display_name}</option>
-              ))}
+              {filteredSections.length === 0 ? (
+                <option value="">No sections found for this year</option>
+              ) : (
+                filteredSections.map((s) => (
+                  <option key={s.id} value={s.id}>{s.display_name}</option>
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -148,13 +226,13 @@ export default function FacultyRecords() {
             />
           </div>
           <div>
-            <label htmlFor="sub-filter">Subject</label>
+            <label htmlFor="sub-filter">Subject (Subject-wise Register)</label>
             <select
               id="sub-filter"
               value={selectedSubject || ""}
               onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">All Allocated Subjects</option>
+              <option value="">All Subjects in Section</option>
               {subjects.map((sub) => (
                 <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
               ))}

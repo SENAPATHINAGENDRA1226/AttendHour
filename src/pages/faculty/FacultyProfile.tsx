@@ -8,7 +8,7 @@ import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 
 export default function FacultyProfile() {
-  const { auth, logout } = useAuth();
+  const { auth, logout, operator } = useAuth();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<FacultyProfileData | null>(null);
@@ -30,7 +30,7 @@ export default function FacultyProfile() {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [operator?.id]);
 
   const handleSignOut = () => {
     logout();
@@ -45,6 +45,40 @@ export default function FacultyProfile() {
 
   return (
     <SidebarLayout>
+      {/* Operator Status Banner if shared faculty */}
+      {operator && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "8px 14px",
+            background: "var(--color-surface-raised, #f8fafc)",
+            border: "1px solid var(--color-border, #e2e8f0)",
+            borderRadius: 8,
+            marginBottom: 16,
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.88rem" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--color-primary, #3b82f6)" }}>
+              badge
+            </span>
+            <span>
+              Operating Profile: <strong>{operator.name}</strong>
+            </span>
+          </div>
+          <button
+            className="btn small secondary"
+            onClick={() => navigate("/faculty/select")}
+            style={{ fontSize: "0.8rem", padding: "4px 10px" }}
+          >
+            Switch Operator
+          </button>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
           <h1 className="page-heading" style={{ margin: 0 }}>Faculty Profile</h1>

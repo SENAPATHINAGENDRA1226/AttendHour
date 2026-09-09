@@ -4,10 +4,18 @@ import { Department, Section, Subject } from "../../types";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
 
+const YEAR_OPTIONS = [
+  { value: "1", label: "1st Year", color: "#0369a1", bg: "#e0f2fe" },
+  { value: "2", label: "2nd Year", color: "#3730a3", bg: "#e0e7ff" },
+  { value: "3", label: "3rd Year", color: "#5b21b6", bg: "#ede9fe" },
+  { value: "4", label: "4th Year", color: "#86198f", bg: "#fae8ff" },
+];
+
 export default function ClassesManage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [sectionYearFilter, setSectionYearFilter] = useState<string>("all");
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -632,13 +640,75 @@ export default function ClassesManage() {
             </div>
           </form>
         )}
-        <div className="table-responsive" style={{ marginTop: 16 }}>
+        {/* Year Filter Pills for Sections */}
+        <div
+          style={{
+            marginTop: 14,
+            marginBottom: 10,
+            padding: "8px 12px",
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            alignItems: "center",
+            backgroundColor: "#ffffff",
+            borderRadius: 6,
+            border: "1px solid var(--border-subtle)",
+          }}
+        >
+          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--ink)", marginRight: 4, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>filter_list</span>
+            Year:
+          </span>
+          <button
+            type="button"
+            className={`btn ${sectionYearFilter === "all" ? "" : "secondary"}`}
+            style={{
+              borderRadius: 16,
+              padding: "3px 10px",
+              fontSize: "0.76rem",
+              fontWeight: 600,
+              backgroundColor: sectionYearFilter === "all" ? "var(--primary)" : "#f1f5f9",
+              color: sectionYearFilter === "all" ? "#ffffff" : "var(--ink)",
+              border: "1px solid var(--border)",
+            }}
+            onClick={() => setSectionYearFilter("all")}
+          >
+            All Years ({sections.length})
+          </button>
+
+          {YEAR_OPTIONS.map((yo) => {
+            const count = sections.filter((s) => String(s.year) === yo.value).length;
+            const isSelected = sectionYearFilter === yo.value;
+            return (
+              <button
+                key={yo.value}
+                type="button"
+                style={{
+                  borderRadius: 16,
+                  padding: "3px 10px",
+                  fontSize: "0.76rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: isSelected ? `2px solid ${yo.color}` : "1px solid var(--border)",
+                  backgroundColor: isSelected ? yo.color : yo.bg,
+                  color: isSelected ? "#ffffff" : yo.color,
+                  transition: "all 0.15s ease",
+                }}
+                onClick={() => setSectionYearFilter(yo.value)}
+              >
+                {yo.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="table-responsive" style={{ marginTop: 8 }}>
           <table className="data-table" aria-label="Sections Table">
             <thead>
               <tr>
                 <th scope="col">Section</th>
-                <th scope="col">Year</th>
                 <th scope="col">Academic Year</th>
+                <th scope="col">Year</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -650,44 +720,69 @@ export default function ClassesManage() {
                   </td>
                 </tr>
               ) : (
-                sections.map((s) => (
-                  <tr key={s.id}>
-                    <td style={{ fontWeight: 600 }}>{s.display_name}</td>
-                    <td>Year {s.year}</td>
-                    <td>
-                      <span className="status-badge pending" style={{ color: "var(--ink)" }}>
-                        {s.academic_year}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="btn secondary"
-                        style={{ marginRight: 6 }}
-                        onClick={() => {
-                          setEditSectionItem(s);
-                          setEditSectionForm({
-                            department_id: String(s.department_id),
-                            year: String(s.year),
-                            name: s.name,
-                            display_name: s.display_name,
-                            academic_year: s.academic_year,
-                          });
-                        }}
-                        aria-label={`Edit section ${s.display_name} and academic year ${s.academic_year}`}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn danger"
-                        onClick={() => deleteSection(s)}
-                        disabled={sectionBusy}
-                        aria-label={`Delete section ${s.display_name}`}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                sections
+                  .filter((s) => (sectionYearFilter === "all" ? true : String(s.year) === sectionYearFilter))
+                  .map((s) => {
+                    const yearOpt = YEAR_OPTIONS.find((y) => Number(y.value) === s.year);
+                    return (
+                      <tr key={s.id}>
+                        <td style={{ fontWeight: 600 }}>{s.display_name}</td>
+                        <td>
+                          <span className="status-badge pending" style={{ color: "var(--ink)" }}>
+                            {s.academic_year}
+                          </span>
+                        </td>
+                        <td>
+                          {yearOpt ? (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "2px 8px",
+                                borderRadius: 9999,
+                                fontSize: "0.76rem",
+                                fontWeight: 700,
+                                backgroundColor: yearOpt.bg,
+                                color: yearOpt.color,
+                              }}
+                            >
+                              {yearOpt.label}
+                            </span>
+                          ) : (
+                            `Year ${s.year}`
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="btn secondary"
+                            style={{ marginRight: 6 }}
+                            onClick={() => {
+                              setEditSectionItem(s);
+                              setEditSectionForm({
+                                department_id: String(s.department_id),
+                                year: String(s.year),
+                                name: s.name,
+                                display_name: s.display_name,
+                                academic_year: s.academic_year,
+                              });
+                            }}
+                            aria-label={`Edit section ${s.display_name} and academic year ${s.academic_year}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn danger"
+                            onClick={() => deleteSection(s)}
+                            disabled={sectionBusy}
+                            aria-label={`Delete section ${s.display_name}`}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
               )}
             </tbody>
           </table>
