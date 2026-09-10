@@ -53,34 +53,38 @@ export default function FacultyDashboard() {
   const displayName = operator?.name || auth?.fullName || auth?.username || "Faculty";
   const firstName = displayName.split(" ")[0];
 
-  async function load() {
+  async function loadRecentSessions() {
+    try {
+      const res = await api.get<{ recent_sessions: RecentSessionSummary[] }>("/faculty/profile");
+      if (res.data?.recent_sessions) {
+        setRecentSessions(res.data.recent_sessions.slice(0, 5));
+      }
+    } catch {
+      // Non-blocking for recent sessions
+    }
+  }
+
+  async function loadSchedule() {
     setLoading(true);
     setError("");
     try {
-      const [resClasses, resProfile] = await Promise.allSettled([
-        api.get<TodayClass[]>("/faculty/today", { params: { for_date: date } }),
-        api.get<{ recent_sessions: RecentSessionSummary[] }>("/faculty/profile"),
-      ]);
-
-      if (resClasses.status === "fulfilled") {
-        setClasses(resClasses.value.data);
-      } else {
-        setError("Failed to load class schedule for the selected date.");
-      }
-
-      if (resProfile.status === "fulfilled" && resProfile.value.data?.recent_sessions) {
-        setRecentSessions(resProfile.value.data.recent_sessions.slice(0, 5));
-      }
+      const res = await api.get<TodayClass[]>("/faculty/today", { params: { for_date: date } });
+      setClasses(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to load class schedule.");
+      setError(err?.response?.data?.detail || err?.message || "Failed to load class schedule for the selected date.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    loadRecentSessions();
+  }, [operator?.id]);
+
+  useEffect(() => {
+    loadSchedule();
   }, [date, operator?.id]);
+
 
   function goMark(cls: TodayClass) {
     const defaultPeriods = cls.scheduled_periods && cls.scheduled_periods.length > 0
@@ -153,7 +157,7 @@ export default function FacultyDashboard() {
 
           <button
             className="btn secondary"
-            onClick={load}
+            onClick={loadRecentSessions}
             disabled={loading}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", fontSize: "0.85rem" }}
           >
@@ -163,7 +167,7 @@ export default function FacultyDashboard() {
         </div>
       </div>
 
-      {error && <ErrorBanner message={error} onRetry={load} />}
+      {error && <ErrorBanner message={error} onRetry={loadSchedule} />}
 
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 24 }}>

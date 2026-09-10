@@ -47,7 +47,7 @@ export default function CoverForColleague() {
     setError("");
     try {
       const res = await api.get<ScheduledClassForCoverOut[]>("/faculty-shared/all-classes-today", {
-        params: { date, search: search || undefined },
+        params: { date },
       });
       setClasses(res.data);
     } catch (err: any) {
@@ -59,7 +59,7 @@ export default function CoverForColleague() {
 
   useEffect(() => {
     loadClasses();
-  }, [date, search]);
+  }, [date]);
 
   function handleMark(cls: ScheduledClassForCoverOut) {
     const params = new URLSearchParams({
@@ -94,11 +94,22 @@ export default function CoverForColleague() {
 
   const activeYear = selectedYear ?? 0;
 
-  // Filter classes by active year (0 = All Years)
+  // Filter classes by active year (0 = All Years) and in-memory search
   const filteredClasses = useMemo(() => {
-    if (activeYear === 0) return classes;
-    return classes.filter((c) => c.year === activeYear);
-  }, [classes, activeYear]);
+    const s = search.trim().toLowerCase();
+    return classes.filter((c) => {
+      if (activeYear !== 0 && c.year !== activeYear) return false;
+      if (!s) return true;
+      return (
+        c.section_name.toLowerCase().includes(s) ||
+        c.subject_name.toLowerCase().includes(s) ||
+        c.subject_code.toLowerCase().includes(s) ||
+        c.faculty_name.toLowerCase().includes(s) ||
+        c.faculty_username.toLowerCase().includes(s)
+      );
+    });
+  }, [classes, activeYear, search]);
+
 
   // Group filtered classes by period number
   const periodGroups = useMemo(() => {
