@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import { MarkStatus, SessionStatus, Student } from "../../types";
+import { MarkStatus, SessionStatus, Student, LateCheckResponse } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
@@ -64,6 +64,38 @@ export default function MarkAttendance() {
   
   const [isDirty, setIsDirty] = useState(false);
   const [conflictItem, setConflictItem] = useState<OutboxItem | null>(null);
+  const [lateWarning, setLateWarning] = useState<LateCheckResponse | null>(null);
+
+  // Check late attendance preview when section, date or periods change
+  useEffect(() => {
+    let isMounted = true;
+    if (!sectionId || periods.length === 0 || isNonAttendanceSubject) {
+      setLateWarning(null);
+      return;
+    }
+
+    async function checkLate() {
+      try {
+        const res = await api.get<LateCheckResponse>("/faculty/attendance/late-check", {
+          params: {
+            section_id: sectionId,
+            date,
+            period_numbers: periods.join(","),
+          },
+        });
+        if (isMounted) {
+          setLateWarning(res.data);
+        }
+      } catch {
+        // Soft fail on late check preview
+      }
+    }
+
+    checkLate();
+    return () => {
+      isMounted = false;
+    };
+  }, [sectionId, date, periods, isNonAttendanceSubject]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -282,6 +314,9 @@ export default function MarkAttendance() {
       });
     }
 
+    const clientSubmissionId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const capturedAt = new Date().toISOString();
+
     const payload = {
       section_id: sectionId,
       subject_id: subjectId,
@@ -297,13 +332,18 @@ export default function MarkAttendance() {
       per_period_overrides: sessionStatus === "held" ? perPeriodOverrides : {},
       section_name: sectionName,
       subject_name: subjectName,
+      captured_at: capturedAt,
+      client_submission_id: clientSubmissionId,
     };
 
     try {
-      await api.post("/faculty/attendance/post", payload);
+      const res = await api.post("/faculty/attendance/post", payload);
       await removeOutboxForSession(sectionId, date, periods);
       const nowStr = new Date().toLocaleTimeString();
-      setSavedTime(`Attendance submitted successfully at ${nowStr}`);
+      const warningNote = res.data?.warnings?.length
+        ? ` (${res.data.warnings[0].delay_display} late)`
+        : "";
+      setSavedTime(`Attendance submitted successfully${warningNote} at ${nowStr}`);
       setIsDirty(false);
       setTimeout(() => navigate("/faculty"), 900);
     } catch (err: any) {
@@ -380,6 +420,45 @@ export default function MarkAttendance() {
           </span>
           <div style={{ fontSize: "0.95rem", lineHeight: 1.4 }}>
             Posting for <strong>{ownerName}</strong>'s class — you are logged in as <strong>{currentOperatorName}</strong>.
+          </div>
+        </div>
+      )}
+      {/* Late Attendance Warning Banner */}
+      {lateWarning && lateWarning.is_late && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+            border: "1px solid #f59e0b",
+            color: "#92400e",
+            padding: "12px 16px",
+            borderRadius: 8,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+            boxShadow: "0 1px 3px rgba(245, 158, 11, 0.1)",
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#d97706", marginTop: 2 }}>
+            warning
+          </span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: 2 }}>
+              Late Attendance Warning
+            </div>
+            <div style={{ fontSize: "0.86rem", lineHeight: 1.4 }}>
+              {lateWarning.warning_message || "Attendance is being posted after the scheduled period."}{" "}
+              <strong style={{ color: "#78350f" }}>You can still submit.</strong>
+            </div>
+            {lateWarning.details && lateWarning.details.length > 1 && (
+              <div style={{ marginTop: 6, fontSize: "0.78rem", color: "#b45309", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {lateWarning.details.map((d) => (
+                  <span key={d.period_number} style={{ background: "rgba(245, 158, 11, 0.15)", padding: "2px 6px", borderRadius: 4 }}>
+                    Period {d.period_number}: {d.delay_display}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

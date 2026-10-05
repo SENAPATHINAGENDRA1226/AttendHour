@@ -75,6 +75,15 @@ export interface TimetableEntry {
   is_active: boolean;
 }
 
+export interface PeriodSchedule {
+  id: number;
+  period_number: number;
+  start_time: string;
+  end_time: string;
+  academic_year?: string | null;
+  label?: string | null;
+}
+
 export interface TodayClass {
   allocation_id: number;
   section_id: number;
@@ -258,6 +267,36 @@ export interface FacultyProfileData {
   recent_sessions: RecentSessionSummary[];
 }
 
+export interface TodaySectionSummary {
+  section_id: number;
+  display_name: string;
+  scheduled: number;
+  posted: number;
+  pending: number;
+  attendance_percentage: number;
+}
+
+export interface TodayPendingItem {
+  section: string;
+  section_id: number;
+  subject: string;
+  period_number: number;
+  owner_faculty: string;
+  scheduled_start: string;
+  minutes_overdue: number;
+}
+
+export interface TodayAttendanceReport {
+  date: string;
+  total_scheduled: number;
+  posted: number;
+  pending: number;
+  attendance_percentage: number;
+  late_count: number;
+  sections: TodaySectionSummary[];
+  pending_items: TodayPendingItem[];
+}
+
 export interface AdminAuditLogEntry {
   login_user_id: number;
   login_username: string;
@@ -279,6 +318,9 @@ export interface AdminAuditLogEntry {
   session_date: string;
   timestamp: string;
   is_substitution: boolean;
+  is_late?: boolean;
+  late_minutes?: number | null;
+  posted_at?: string | null;
 }
 
 export interface AdminAuditLogsResponse {
@@ -286,4 +328,54 @@ export interface AdminAuditLogsResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface LateCheckPeriodResult {
+  period_number: number;
+  scheduled_start: string | null;
+  posted_at: string;
+  is_late: boolean;
+  late_minutes: number;
+  delay_display: string;
+}
+
+export interface LateCheckResponse {
+  is_late: boolean;
+  max_late_minutes: number;
+  warning_message: string | null;
+  details: LateCheckPeriodResult[];
+}
+
+export interface FacultyLateCount {
+  faculty_id: number;
+  faculty_name: string;
+  department: string | null;
+  late_count: number;
+  total_late_minutes: number;
+  avg_late_minutes: number;
+}
+
+export interface LatePostingItem {
+  id: number;
+  date: string;
+  period_number: number;
+  section_id: number;
+  section_name: string;
+  subject_id: number;
+  subject_name: string;
+  faculty_id: number;
+  faculty_name: string;
+  scheduled_start: string | null;
+  posted_at: string | null;
+  late_minutes: number;
+  delay_display: string;
+  source: string;
+}
+
+export interface LatePostingsReport {
+  date_from: string;
+  date_to: string;
+  total_late_postings: number;
+  top_faculty: FacultyLateCount[];
+  items: LatePostingItem[];
 }

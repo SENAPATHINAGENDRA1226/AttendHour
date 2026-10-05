@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import { Faculty, Section, Subject, TimetableEntry, Student, FacultyAllocation } from "../../types";
 import Spinner from "../../components/Spinner";
 import ErrorBanner from "../../components/ErrorBanner";
+import PeriodScheduleModal from "../../components/PeriodScheduleModal";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SHORT_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -37,6 +38,7 @@ export default function TimetableManage() {
 
   // Bulk import state
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showPeriodSchedule, setShowPeriodSchedule] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadResult, setUploadResult] = useState<{ inserted: number; updated: number; errors: string[] } | null>(null);
@@ -242,16 +244,28 @@ export default function TimetableManage() {
           </h2>
           <p className="page-subheading" style={{ margin: "4px 0 0" }}>Allocation set here drives every faculty's daily scheduled classes.</p>
         </div>
-        <button
-          className="btn secondary"
-          onClick={() => setShowBulkUpload(!showBulkUpload)}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem" }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
-            upload_file
-          </span>
-          {showBulkUpload ? "Close Import Panel" : "Bulk Import Timetable"}
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            className="btn secondary"
+            onClick={() => setShowPeriodSchedule(true)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--primary)" }}>
+              schedule
+            </span>
+            Bell Timetable Schedule
+          </button>
+          <button
+            className="btn secondary"
+            onClick={() => setShowBulkUpload(!showBulkUpload)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+              upload_file
+            </span>
+            {showBulkUpload ? "Close Import Panel" : "Bulk Import Timetable"}
+          </button>
+        </div>
       </div>
 
       {/* Optional Bulk Import Card */}
@@ -719,6 +733,11 @@ export default function TimetableManage() {
           </div>
         </div>
       )}
+      {/* Period Schedule Modal */}
+      <PeriodScheduleModal
+        isOpen={showPeriodSchedule}
+        onClose={() => setShowPeriodSchedule(false)}
+      />
     </div>
   );
 }

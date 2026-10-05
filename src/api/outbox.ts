@@ -13,6 +13,8 @@ export interface OutboxPayload {
   section_name?: string;
   subject_name?: string;
   operator_faculty_id?: number;
+  captured_at?: string;
+  client_submission_id?: string;
 }
 
 export interface OutboxItem {
@@ -62,6 +64,13 @@ export async function saveToOutbox(payload: OutboxPayload): Promise<OutboxItem> 
     if (savedOpId) {
       payload.operator_faculty_id = Number(savedOpId);
     }
+  }
+
+  if (!payload.captured_at) {
+    payload.captured_at = new Date().toISOString();
+  }
+  if (!payload.client_submission_id) {
+    payload.client_submission_id = id;
   }
 
   const item: OutboxItem = {
@@ -251,6 +260,8 @@ export async function syncOutbox(): Promise<{ synced: number; conflicts: number;
             marks: item.payload.marks || [],
             remarks: item.payload.remarks || null,
             per_period_overrides: item.payload.per_period_overrides || {},
+            captured_at: item.payload.captured_at,
+            client_submission_id: item.payload.client_submission_id,
           },
           { headers: replayHeaders }
         );

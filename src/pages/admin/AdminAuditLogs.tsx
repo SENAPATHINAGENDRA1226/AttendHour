@@ -19,6 +19,7 @@ export default function AdminAuditLogs() {
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
   const [actionFilter, setActionFilter] = useState<string>("");
   const [sectionFilter, setSectionFilter] = useState<string>("");
+  const [lateOnly, setLateOnly] = useState<boolean>(false);
 
   // Pagination state
   const [limit, setLimit] = useState<number>(50);
@@ -66,6 +67,7 @@ export default function AdminAuditLogs() {
         if (dateTo) params.date_to = dateTo;
         if (actionFilter) params.action = actionFilter;
         if (sectionFilter) params.section_id = Number(sectionFilter);
+        if (lateOnly) params.late_only = true;
 
         if (selectedFacultyId) {
           if (facultyFilterType === "acting") {
@@ -85,7 +87,7 @@ export default function AdminAuditLogs() {
         setLoading(false);
       }
     },
-    [dateFrom, dateTo, actionFilter, sectionFilter, selectedFacultyId, facultyFilterType, limit, offset]
+    [dateFrom, dateTo, actionFilter, sectionFilter, selectedFacultyId, facultyFilterType, lateOnly, limit, offset]
   );
 
   useEffect(() => {
@@ -105,6 +107,7 @@ export default function AdminAuditLogs() {
     setSelectedFacultyId("");
     setActionFilter("");
     setSectionFilter("");
+    setLateOnly(false);
     setOffset(0);
 
     // Call fetch with clean defaults immediately
@@ -140,6 +143,7 @@ export default function AdminAuditLogs() {
       if (dateTo) params.date_to = dateTo;
       if (actionFilter) params.action = actionFilter;
       if (sectionFilter) params.section_id = Number(sectionFilter);
+      if (lateOnly) params.late_only = true;
 
       if (selectedFacultyId) {
         if (facultyFilterType === "acting") {
@@ -548,6 +552,46 @@ export default function AdminAuditLogs() {
               </select>
             </div>
 
+            {/* Late Only Filter */}
+            <div>
+              <label
+                style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: 6, color: "var(--ink)" }}
+              >
+                Lateness Filter
+              </label>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: lateOnly ? "1px solid #f59e0b" : "1px solid var(--border)",
+                  backgroundColor: lateOnly ? "#fffbeb" : "var(--surface)",
+                  cursor: "pointer",
+                  fontSize: "0.88rem",
+                  fontWeight: lateOnly ? 700 : 500,
+                  color: lateOnly ? "#92400e" : "var(--ink)",
+                  userSelect: "none",
+                  height: "38px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={lateOnly}
+                  onChange={(e) => setLateOnly(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: "#d97706", cursor: "pointer" }}
+                />
+                <span>Late Only</span>
+                {lateOnly && (
+                  <span style={{ fontSize: "0.72rem", backgroundColor: "#fef3c7", padding: "1px 6px", borderRadius: 4, color: "#b45309", marginLeft: "auto" }}>
+                    Active
+                  </span>
+                )}
+              </label>
+            </div>
+
             {/* Action Buttons */}
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
               <button
@@ -707,6 +751,7 @@ export default function AdminAuditLogs() {
                   <th style={{ padding: "12px 16px", minWidth: 160 }}>Class Owner</th>
                   <th style={{ padding: "12px 16px", minWidth: 130 }}>Action</th>
                   <th style={{ padding: "12px 16px", minWidth: 220 }}>Class Details</th>
+                  <th style={{ padding: "12px 16px", minWidth: 120, textAlign: "center" }}>Lateness</th>
                   <th style={{ padding: "12px 16px", minWidth: 110, textAlign: "center" }}>Substitution?</th>
                 </tr>
               </thead>
@@ -824,6 +869,36 @@ export default function AdminAuditLogs() {
                             Period {row.period_number}
                           </span>
                         </div>
+                      </td>
+
+                      {/* Lateness */}
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        {row.is_late ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              padding: "3px 8px",
+                              borderRadius: 9999,
+                              fontSize: "0.76rem",
+                              fontWeight: 700,
+                              backgroundColor: "#fef3c7",
+                              color: "#b45309",
+                              border: "1px solid #fde68a",
+                            }}
+                            title={row.posted_at ? `Posted at: ${formatDateTime(row.posted_at)}` : undefined}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+                              schedule
+                            </span>
+                            Late (+{row.late_minutes ?? 0}m)
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--ink-muted)", fontSize: "0.82rem" }}>
+                            On time
+                          </span>
+                        )}
                       </td>
 
                       {/* Substitution? */}
